@@ -1,4 +1,5 @@
 ﻿
 link_libraries(lasanga)
 
-add_executable(example.override override.cpp)
+add_executable(example.override_invoke override_invoke.cpp)
+add_executable(example.override_get override_get.cpp)

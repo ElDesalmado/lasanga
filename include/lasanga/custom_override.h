@@ -63,10 +63,10 @@ namespace eld
             traits::is_complete<signature_type>());
     }
 
-    template<template<typename...> class NameTag, typename T, typename... U, typename... ArgsT>
+    template<template<typename...> class SignatureTag, typename T, typename... U, typename... ArgsT>
     constexpr decltype(auto) invoke(T &&obj, ArgsT &&...args)
     {
-        using signature_type = NameTag<std::decay_t<T>, U...>;
+        using signature_type = SignatureTag<std::decay_t<T>, U...>;
         static_assert(traits::is_complete<signature_type>(), "Signature tag is not implemented!");
 
         return detail::invoke_by_signature<signature_type>(obj, std::forward<ArgsT>(args)...);
@@ -92,53 +92,96 @@ namespace eld
 
         template<typename NameTag, typename T>
         constexpr decltype(auto) get_invoke_name_tag(T &&obj,
-                                                     std::true_type /*is_complete<NameTag>*/)
+                                                     std::false_type /*is_complete<NameTag>*/)
         {
-            return NameTag()(obj);
+            static_assert(traits::is_complete<NameTag>(), "Name tag is not implemented!");
         }
 
         template<typename NameTag, typename T>
         constexpr decltype(auto) get_invoke_name_tag(T &&obj,
-                                                     std::false_type /*is_complete<NameTag>*/)
-        {
-            // TODO: implement
-        }
-
-        template<typename NameTag, typename T, typename Callable>
-        constexpr decltype(auto) get_invoke_name_tag(tag::default_call,
-                                                     T &&obj,
-                                                     Callable &&,
                                                      std::true_type /*is_complete<NameTag>*/)
         {
-            return NameTag()(obj);
+            return invoke_by_signature<NameTag>(obj);
         }
 
-        template<typename NameTag, typename T, typename Callable>
-        constexpr decltype(auto) get_invoke_name_tag(tag::default_call,
-                                                     T &&obj,
-                                                     Callable &&callable,
-                                                     std::false_type /*is_complete<NameTag>*/)
+        template<typename NameTag, typename T>
+        constexpr decltype(auto) get_element_if_tuple(T &&tuple, std::true_type /*is_tuple<T>*/)
+        {
+            using found_type = find_type<NameTag>;
+            static_assert(!std::is_same_v<found_type, not_found>,
+                          "NameTag does not have a type assigned to it");
+
+            return std::get<found_type>(tuple);
+        }
+
+        template<typename NameTag, typename T>
+        constexpr decltype(auto) get_invoke_by_signature(T &&obj,
+                                                         std::false_type /*is_complete<NameTag>*/)
+        {
+            return get_element_if_tuple<NameTag>(obj, traits::is_tuple<T>());
+        }
+
+        template<typename NameTag, typename T>
+        constexpr decltype(auto) get_invoke_by_signature(T &&obj,
+                                                         std::true_type /*is_complete<NameTag>*/)
+        {
+            return detail::invoke_by_signature<NameTag>(obj);
+        }
+
+        template<typename /*NameTag*/, typename T, typename Callable>
+        constexpr decltype(auto) get_tuple_element_default_callable(T &&obj,
+                                                                    Callable &&callable,
+                                                                    std::false_type /*is_tuple<T>*/)
         {
             return std::forward<Callable>(callable)(obj);
         }
 
+        template<typename NameTag, typename T, typename Callable>
+        constexpr decltype(auto) get_tuple_element_default_callable(T &&obj,
+                                                                    Callable &&,
+                                                                    std::true_type /*is_tuple<T>*/)
+        {
+            return get_element_if_tuple<NameTag>(obj, std::true_type());
+        }
+
+        template<typename NameTag, typename T, typename Callable>
+        constexpr decltype(auto) get_default_callable(tag::default_call,
+                                                      T &&obj,
+                                                      Callable &&callable,
+                                                      std::false_type /*is_complete<NameTag>*/)
+        {
+            return get_tuple_element_default_callable<NameTag>(obj,
+                                                               std::forward<Callable>(callable),
+                                                               traits::is_tuple<std::decay_t<T>>());
+        }
+
+        template<typename NameTag, typename T, typename Callable>
+        constexpr decltype(auto) get_default_callable(tag::default_call,
+                                                      T &&obj,
+                                                      Callable &&callable,
+                                                      std::true_type /*is_complete<NameTag>*/)
+        {
+            return detail::invoke_by_signature<NameTag>(obj);
+        }
+
     }   // namespace detail
 
+    // TODO: implement get to take into account if T is a tuple
     template<template<typename...> class NameTag, typename... U, typename T>
     constexpr decltype(auto) get(T &&obj)
     {
         using name_tag_t = NameTag<std::decay_t<T>, U...>;
-        return detail::get_invoke_name_tag<name_tag_t>(obj, traits::is_complete<name_tag_t>());
+        return detail::get_invoke_by_signature<name_tag_t>(obj, traits::is_complete<name_tag_t>());
     }
 
     template<template<typename...> class NameTag, typename... U, typename T, typename Callable>
-    constexpr decltype(auto) get(T &&obj, Callable &&defaultCall)
+    constexpr decltype(auto) get(tag::default_call, T &&obj, Callable &&defaultCall)
     {
         using name_tag_t = NameTag<std::decay_t<T>, U...>;
-        return detail::get_invoke_name_tag<name_tag_t>(default_call_tag,
-                                                       obj,
-                                                       std::forward<Callable>(defaultCall),
-                                                       traits::is_complete<name_tag_t>());
+        return detail::get_default_callable<name_tag_t>(default_call_tag,
+                                                        obj,
+                                                        std::forward<Callable>(defaultCall),
+                                                        traits::is_complete<name_tag_t>());
     }
 
 }   // namespace eld

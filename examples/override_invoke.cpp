@@ -1,5 +1,5 @@
 ﻿
-// Your header with names
+// Your header with signatures
 
 #include <iostream>
 
@@ -77,17 +77,17 @@ public:
     int foo(int) const
     {
         std::cout
-            << "impl_object_overridden::foo is overridden by name tag and will never be called!"
+            << "impl_object_overridden::foo is overridden by signature tag and will never be called!"
             << std::endl;
         return 42;
     }
 
-    void bar(double, const char *)
-    {
-        std::cout
-            << "impl_object_overridden::bar is overridden by name tag and will never be called!"
-            << std::endl;
-    }
+//    void bar(double, const char *)
+//    {
+//        std::cout
+//            << "impl_object_overridden::bar is overridden by signature tag and will never be called!"
+//            << std::endl;
+//    }
 };
 
 template<>
@@ -95,7 +95,7 @@ struct signatures::foo<impl_object_overridden>
 {
     int operator()(const impl_object_overridden &, int)
     {
-        std::cout << "impl_object_override::foo is overridden by the name tag" << std::endl;
+        std::cout << "impl_object_override::foo is overridden by the signature tag" << std::endl;
         return 42;
     }
 };
@@ -105,7 +105,7 @@ struct signatures::bar<impl_object_overridden>
 {
     void operator()(impl_object_overridden &, double d, const char *str)
     {
-        std::cout << "impl_object_override::bar is overridden by the name tag: " << str << ' ' << d
+        std::cout << "impl_object_override::bar is overridden by the signature tag: " << str << ' ' << d
                   << std::endl;
     }
 };
