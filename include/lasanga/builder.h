@@ -73,25 +73,6 @@ namespace eld
          * @tparam Callable Callable that constructs an object of type, or provides a tuple of
          * arguments to construct an object from
          */
-        template<typename NameTag, typename Callable>
-        class designated_factory
-        {
-            static_assert(is_callable_factory<Callable>(),
-                          "Factory type must be a callable object!");
-
-        public:
-            using type = NameTag;
-            using callable_type = Callable;
-
-            template<typename... ArgsT>
-            designated_factory(ArgsT &&...args)   //
-              : factory(std::forward<ArgsT>(args)...)
-            {
-            }
-
-        private:
-            Callable factory;
-        };
 
         /**
          * Designated_factory must provide:
@@ -109,7 +90,128 @@ namespace eld
          * - template type
          */
 
+        template<typename Callable, typename T, typename...>
+        class designated_factory
+        {
+            static_assert(is_callable_factory<Callable>(),
+                          "Factory type must be a callable object!");
+
+        public:
+            using type = typename traits::get_type<T>::type;
+            using name = typename traits::get_name<T>::type;
+
+            template<bool DefaultConstructible = std::is_default_constructible_v<Callable>,
+                     typename std::enable_if_t<DefaultConstructible, int> * = nullptr>
+            designated_factory()   //
+              : factory_()
+            {
+            }
+
+            designated_factory(designated_factory &&) = default;
+
+            template<typename CallableT>
+            designated_factory(CallableT &&callable)   //
+              : factory_(std::forward<CallableT>(callable))
+            {
+            }
+
+            constexpr decltype(auto) operator()(build_t<type>) { return factory_(); }
+
+            template<bool IsUnnamed = std::is_same_v<name, unnamed>,
+                     typename std::enable_if_t<!IsUnnamed, int> * = nullptr>
+            constexpr decltype(auto) operator()(build_t<name>)
+            {
+                return operator()(build_t<type>());
+            }
+
+        private:
+            Callable factory_;
+        };
+
+        // specialization to create implementation type for GenericClass<>
+        template<template<typename> class GenericClass,
+                 typename Specialization,
+                 typename... Modifiers,
+                 typename Callable>
+        class designated_factory<Callable, GenericClass<Specialization>, Modifiers...>
+        {
+        public:
+            using type = typename traits::get_type<Specialization>::type;
+            using name = typename traits::get_name<Specialization>::type;
+
+            template<bool DefaultConstructible = std::is_default_constructible_v<Callable>,
+                     typename std::enable_if_t<DefaultConstructible, int> * = nullptr>
+            designated_factory()   //
+              : factory_()
+            {
+            }
+
+            designated_factory(designated_factory &&) = default;
+
+            template<typename CallableT>
+            designated_factory(CallableT &&callable)   //
+              : factory_(std::forward<CallableT>(callable))
+            {
+            }
+
+            constexpr decltype(auto) operator()(build_tt<GenericClass>) { return factory_(); }
+
+        private:
+            Callable factory_;
+        };
+
+        template<typename... T>
+        class builder : protected T...
+        {
+        public:
+            template<typename... ArgsT>
+            explicit builder(ArgsT &&...args)   //
+              : T(std::forward<ArgsT>(args))...
+            {
+            }
+
+            using T::operator()...;
+        };
+
     }   // namespace detail
+
+    template<typename Callable>
+    constexpr auto wrap_factory()
+    {
+        using constructed_type = decltype(std::declval<Callable>()());
+        static_assert(!traits::is_tuple<constructed_type>(),
+                      "Factories that construct tuples are not allowed. Use special overload and "
+                      "explicitly specify constructed type");
+        return detail::designated_factory<Callable, constructed_type>();
+    }
+
+    template<template<typename...> class GenericClass, typename Callable>
+    constexpr auto wrap_factory()
+    {
+        using constructed_type = decltype(std::declval<Callable>()());
+        static_assert(!traits::is_tuple<constructed_type>(),
+                      "Factories that construct tuples are not allowed. Use special overload and "
+                      "explicitly specify constructed type");
+        return detail::designated_factory<Callable, GenericClass<constructed_type>>();
+    }
+
+    template<typename ConstructedT>
+    constexpr auto wrap_factory(ConstructedT (*ptr)())
+    {
+        return detail::designated_factory<decltype(ptr), ConstructedT>(ptr);
+    }
+
+    template<typename Callable>   //, typename std::enable_if_t<, int>* = nullptr>
+    constexpr auto wrap_factory(Callable &&callable)
+    {
+        using callable_type = std::decay_t<Callable>;
+        using constructed_type = decltype(std::declval<callable_type>()());
+        static_assert(!traits::is_tuple<constructed_type>(),
+                      "Factories that construct tuples are not allowed. Use special overload and "
+                      "explicitly specify constructed type");
+        return detail::designated_factory<callable_type, constructed_type>(
+            std::forward<Callable>(callable));
+    }
 
     template<typename NameTag, typename Callable>
     detail::designated_factory<NameTag, std::decay_t<Callable>> wrap_factory(Callable &&callable)
@@ -118,20 +220,15 @@ namespace eld
             std::forward<Callable>(callable));
     }
 
-    template<typename... DesignatedFactories>
-    class builder
-    {
-    public:
-        // builder must have overloadings for operator()(tag<NameTag>)
-
-    private:
-        std::tuple<DesignatedFactories...> designatedFactories_;
-    };
-
+    /**
+     *
+     * @tparam ArgsT list of designated factories
+     * @return
+     */
     template<typename... ArgsT>
-    constexpr auto make_builder(ArgsT &&.../*args*/)
+    constexpr auto make_builder(ArgsT &&...args)
     {
-        // TODO: implement
+        return detail::builder<std::decay_t<ArgsT>...>(std::forward<ArgsT>(args)...);
     }
 
 }   // namespace eld

@@ -2,6 +2,8 @@
 #include "lasanga/custom_override.h"
 #include "lasanga/lasanga.h"
 
+#include <iostream>
+
 /**
  * auto builder = make_builder(...
  *      algo<generic_class<ImplA>>,
@@ -23,16 +25,6 @@
  */
 
 using namespace eld;
-
-template<typename BuilderT>
-struct builder_traits
-{
-    using builder_type = BuilderT;
-
-    // returns a type (or a list of types (?))
-    template<template<typename...> class GenericClass>
-    using default_specialization = typename BuilderT::template default_specialization<GenericClass>;
-};
 
 template<typename Impl>
 class generic_class
@@ -126,7 +118,8 @@ private:
  *
  * Pepe, Kaka and Fofo itself may be templates...
  *
- *
+ * Need a type map to get indexes for specializations of types corresponding to tags pepe, kaka and
+ * fofo
  *
  *
  */
@@ -150,12 +143,76 @@ constexpr auto make_layer(BuilderT &&builder)
  *        typename TypeA,
  *        typename TypeB> - composition that will give a list of types and names to be used
  *
+ * if a builder has associated list of specializations build_tt<GenericClass, Name_n>, one could use
+ * a special function to specialize GenericClass given a Map of Name_n ->
  *
  */
 
+impl func_create_impl() { return { 4, 8.15 }; }
+
+struct create_impl
+{
+    impl operator()() { return { 4, 8.15 }; }
+};
+
+struct name_impl;
+
+struct person
+{
+    void speak() { std::cout << "person" << std::endl; }
+};
+
+struct dog
+{
+    void speak() { std::cout << "dog" << std::endl; }
+};
+
+struct cat
+{
+    void speak() { std::cout << "cat" << std::endl; }
+};
+
+person create_person() { return {}; }
+
+struct create_cat
+{
+    cat operator()() { return {}; }
+};
+
 int main(int, char **)
 {
+    auto builder = make_builder(wrap_factory(&create_person),
+                                wrap_factory<create_cat>(),
+                                wrap_factory([]() { return dog(); }));
+
+    builder(build_t<person>()).speak();
+    builder(build_t<cat>()).speak();
+    builder(build_t<dog>()).speak();
+
     auto layerDeduced = make_layer(BuilderNonTuple());
+
+    create_impl createImpl{};
+
+    auto designatedFactoryImpl = detail::designated_factory<create_impl, impl>();
+    impl i = designatedFactoryImpl(build_t<impl>());
+    auto designatedFactoryGeneric = detail::designated_factory<create_impl, generic_class<impl>>();
+    impl i2 = designatedFactoryGeneric(build_tt<generic_class>());
+
+    auto designatedFactoryNamedImpl =
+        detail::designated_factory<create_impl, descriptor_t<name_impl, impl>>();
+    impl iNamed = designatedFactoryNamedImpl(build_t<name_impl>());
+
+    impl fromTemplateArgument = wrap_factory<create_impl>()(build_t<impl>());
+    impl fromFunctionPointer = wrap_factory(&func_create_impl)(build_t<impl>());
+    impl fromCallableClass = wrap_factory(create_impl())(build_t<impl>());
+    impl fromLambda = wrap_factory([]() { return impl(4, 8.15); })(build_t<impl>());
+
+    auto implLambda = []() { return impl(4, 8.15); };
+    static_assert(std::is_same_v<impl, decltype(implLambda())>);
+    impl fromLambda2 = wrap_factory(implLambda)(build_t<impl>());   //
+
+    impl fromGenericTemplate =
+        wrap_factory<generic_class, create_impl>()(build_tt<generic_class>());
 
     return 0;
 }
