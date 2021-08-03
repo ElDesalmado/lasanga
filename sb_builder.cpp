@@ -1,6 +1,7 @@
 ﻿
 #include "lasanga/builder.h"
 
+#include <type_traits>
 #include <utility>
 
 template<typename...>
@@ -73,7 +74,8 @@ struct build_t
 {
 };
 
-template<template<typename...> class NameTag, typename... Modifiers>
+// (? do I need this ?) tag to build a specialization(implementation) for class template Type<Spec>
+template<template<typename...> class Type, typename... Modifiers>
 struct build_tt
 {
 };
@@ -98,6 +100,8 @@ namespace name_tags
 
     struct C;
 }   // namespace name_tags
+
+// TODO: function build(Builder, tag<NameOrType>) to deduce return type? (Object or Tuple)
 
 template<typename A, typename B, typename C>
 class Layer
@@ -150,11 +154,100 @@ struct Cat
     void speak() { std::cout << "Cat" << std::endl; }
 };
 
+template<typename...>
+struct unspecified_tt;
+
+namespace traits
+{
+    template<template<typename...> class ATT, template<typename...> class BTT>
+    struct is_same_tt : std::false_type
+    {
+    };
+
+    template<template<typename...> class TT>
+    struct is_same_tt<TT, TT> : std::true_type
+    {
+    };
+
+    template<typename T, typename From>
+    struct is_constructible : std::is_constructible<T, From>
+    {
+    };
+
+    template<typename T, typename... Args>
+    struct is_constructible<T, std::tuple<Args...>> : std::is_constructible<T, Args...>
+    {
+    };
+
+    template<template<typename...> class>
+    struct is_unspecified : std::false_type
+    {
+    };
+
+    template<>
+    struct is_unspecified<unspecified_tt> : std::true_type
+    {
+    };
+}   // namespace traits
+
+namespace detail
+{
+}
+
+// TODO: variadic list for parameters other than Type?
+template<typename Callable,
+         typename Type,
+         typename NameTag = Type,
+         template<typename...> class GenericContextClass = unspecified_tt,
+         template<typename...> class GenericClass = unspecified_tt>
+class designated_factory
+{
+public:
+    using type = Type;
+    using name_tag = NameTag;
+
+    // TODO: refactor this?
+    static_assert(std::is_same_v<type, decltype(std::declval<Callable>()())> ||
+                      traits::is_constructible<type, decltype(std::declval<Callable>()())>::value,
+                  "Callable can't be used to construct an object or Type");
+
+    template<typename... ArgsT,
+             typename std::enable_if_t<sizeof...(ArgsT) ||   //
+                                           std::is_default_constructible_v<Callable>,
+                                       int> * = nullptr>
+    explicit designated_factory(ArgsT &&...args)   //
+      : factory_(std::forward<ArgsT>(args)...)
+    {
+    }
+
+    decltype(auto) operator()(build_t<type>) { return factory_(); }
+
+    template<bool Specified = !traits::is_unspecified<GenericClass>::value,
+             typename std::enable_if_t<Specified, int> * = nullptr>
+    decltype(auto) operator()(build_tt<GenericClass>)
+    {
+        return operator()(build_t<type>());
+    }
+
+    // TODO: conditional to use name_tt<type> if name_tag is a template
+    decltype(auto) operator()(name_t<name_tag>) { return operator()(build_t<type>()); }
+
+    template<bool Specified = !traits::is_unspecified<GenericContextClass>::value,
+             typename std::enable_if_t<Specified, int> * = nullptr>
+    decltype(auto) operator()(dname_t<GenericContextClass, name_tag>)
+    {
+        return operator()(build_t<type>());
+    }
+
+private:
+    Callable factory_;
+};
+
 // TODO: create Builder using make_builder function
 // TODO: make builder using name tags and designated factories
 struct Builder
 {
-    // these operators must be generated automatically
+    // these operators must be generated automatically within designated factories
 
     NonTemplate operator()(build_t<NonTemplate>) { return {}; }
 
@@ -164,8 +257,14 @@ struct Builder
 
     Cat operator()(name_t<name_tags::C>) { return {}; }
 
+    template<template<typename...> class NotSpecified>
+    Cat operator()(dname_t<NotSpecified, name_tags::C>)
+    {
+        return {};
+    }
+
     // if this is not declared within the Builder, name_t must be used
-    Cat operator()(dname_t<Layer, name_tags::C>) { return {}; }
+    //    Cat operator()(dname_t<Layer, name_tags::C>) { return {}; }
 
     template<typename NameTag>
     struct type_by_name;
@@ -190,7 +289,10 @@ struct Builder::type_by_name<name_tags::C>
 
 int main(int, char **)
 {
-    auto deducedLayer = make_lasanga<Layer>(Builder());
+    auto builder =   // make_builder(
+        Builder();
+
+    auto deducedLayer = make_lasanga<Layer>(builder);
     deducedLayer.speak_all();
 
     //
