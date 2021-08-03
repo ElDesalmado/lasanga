@@ -9,7 +9,10 @@ namespace eld
 {
     namespace tag
     {
-        template<typename>
+        // placeholder for template template tag
+        struct any;
+
+        template<typename...>
         struct build
         {
         };
