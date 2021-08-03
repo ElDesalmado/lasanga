@@ -6,6 +6,12 @@
 template<typename...>
 struct type_list;
 
+// wrapper to store unspecialized template class within a type_list
+template<template<typename...> class>
+struct type_tt
+{
+};
+
 template<template<typename...> class /*GenericClass*/, typename /*TypeList*/>
 struct specialize_t;
 
@@ -38,8 +44,6 @@ template<template<typename...> class GenericClass,
 constexpr auto make_lasanga(BuilderT &&builder)
 {
     using name_list = typename GetNameList<GenericClass, Modifiers...>::type;
-
-    // TODO: get list of types from builder
     using type_list_t = typename get_type_list<std::decay_t<BuilderT>, name_list>::type;
 
     return typename specialize_t<GenericClass, type_list_t>::type(builder);
@@ -89,10 +93,7 @@ namespace name_tags
 {
     struct A;
 
-    // TODO: how to use? type_list<B> will not work
-    //    template<typename...>
-    //    struct B;
-
+    template<typename...>
     struct B;
 
     struct C;
@@ -105,9 +106,7 @@ public:
     template<typename BuilderT>
     Layer(BuilderT &&builder)
       : a_(builder(name_t<name_tags::A>())),
-        //        b_(builder(name_tt<name_tags::B>())), // TODO: how to work with this? type_list<B>
-        // will not compile
-        b_(builder(name_t<name_tags::B>())),
+        b_(builder(name_tt<name_tags::B>())),
         c_(builder(dname_t<Layer, name_tags::C>())),
         nt_(builder(build_t<NonTemplate>()))
     {
@@ -131,7 +130,7 @@ private:
 template<>
 struct get_name_list<Layer>
 {
-    using type = type_list<name_tags::A, name_tags::B, name_tags::C>;
+    using type = type_list<name_tags::A, type_tt<name_tags::B>, name_tags::C>;
 };
 
 // end of user-defined header
@@ -161,7 +160,7 @@ struct Builder
 
     Person operator()(name_t<name_tags::A>) { return {}; }
 
-    Dog operator()(name_t<name_tags::B>) { return {}; }
+    Dog operator()(name_tt<name_tags::B>) { return {}; }
 
     Cat operator()(name_t<name_tags::C>) { return {}; }
 
@@ -179,7 +178,7 @@ struct Builder::type_by_name<name_tags::A>
     using type = Person;
 };
 template<>
-struct Builder::type_by_name<name_tags::B>
+struct Builder::type_by_name<type_tt<name_tags::B>>
 {
     using type = Dog;
 };
