@@ -145,31 +145,13 @@ namespace eld
 
     namespace traits
     {
-        namespace detail
-        {
-            // TODO: implement.
-            template<typename BuilderT,
-                     typename NameTag,
-                     template<typename...> class GenericContextClass = unspecified_tt>
-            struct type_by_name
-            {
-                using type =
-                    typename BuilderT::template type_by_name<NameTag, GenericContextClass>::type;
-                static_assert(!std::is_same_v<type, not_found_t>,
-                              "NameTag is not registered within the BuilderT");
-            };
-        }   // namespace detail
-
-        template<typename BuilderT, typename NameTag>
-        using type_by_name = typename detail::type_by_name<BuilderT, NameTag>::type;
-
         template<typename /*BuilderT*/, typename /*NameList*/>
         struct get_type_list;
 
         template<typename BuilderT, typename... NameTags>
         struct get_type_list<BuilderT, type_list<NameTags...>>
         {
-            using type = type_list<type_by_name<BuilderT, NameTags>...>;
+            using type = type_list<typename BuilderT::template type_by_name<NameTags>...>;
         };
     }   // namespace traits
 
@@ -262,7 +244,7 @@ namespace eld
 
             static_assert(traits::type_list_size<list>::value <= 1, "Several NameTags found!");
 
-            using type = typename traits::element_type<0, list>::type;
+            using type = typename traits::element_type<0, list>::type::type;
         };
 
         // implement search by NameTag
@@ -281,8 +263,8 @@ namespace eld
         }
 
         template<typename NameTag, template<typename...> class GenericContextType = unspecified_tt>
-        using type_by_name =
-            detail::get_type_by_name<NameTag, GenericContextType, DesignatedFactories...>;
+        using type_by_name = typename detail::
+            get_type_by_name<NameTag, GenericContextType, DesignatedFactories...>::type;
 
         // TODO: resolve dname_t to name_t in case no DependsOnT template types were found
 

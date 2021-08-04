@@ -174,10 +174,8 @@ int main(int, char **)
     builder(eld::name_tag<alias::C>()).speak();
     builder(eld::dname_t<Layer, alias::C>()).speak();
 
-    auto deducedLayer = Layer<Person, Dog, Cat>(Builder());
-    //        eld::make_lasanga<Layer>(builder); // TODO: make it work
+    auto deducedLayer = eld::make_lasanga<Layer>(builder);
     deducedLayer.speak_all();
 
-    //
     return 0;
 }
