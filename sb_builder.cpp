@@ -78,60 +78,6 @@ struct Cat
     void speak() { std::cout << "Cat" << std::endl; }
 };
 
-namespace traits
-{
-}   // namespace traits
-
-namespace detail
-{
-}
-
-// TODO: variadic list for parameters other than Type?
-
-// TODO: create Builder using make_builder function
-// TODO: make builder using name tags and designated factories
-struct Builder
-{
-    // these operators must be generated automatically within designated factories
-
-    NonTemplate operator()(eld::build_t<NonTemplate>) { return {}; }
-
-    Person operator()(eld::name_t<alias::A>) { return {}; }
-
-    Dog operator()(eld::name_tt<alias::B>) { return {}; }
-
-    Cat operator()(eld::name_t<alias::C>) { return {}; }
-
-    template<template<typename...> class NotSpecified>
-    Cat operator()(eld::dname_t<NotSpecified, alias::C>)
-    {
-        return {};
-    }
-
-    // if this is not declared within the Builder, name_t must be used
-    //    Cat operator()(dname_t<Layer, name_tags::C>) { return {}; }
-
-    template<typename NameTag, template<typename...> class = eld::unspecified_tt>
-    struct type_by_name;
-};
-
-// This must be automatically generated for the Builder in case NameTag was bound
-template<>
-struct Builder::type_by_name<alias::A>
-{
-    using type = Person;
-};
-template<>
-struct Builder::type_by_name<eld::type_tt<alias::B>>
-{
-    using type = Dog;
-};
-template<>
-struct Builder::type_by_name<alias::C>
-{
-    using type = Cat;
-};
-
 // factories
 
 struct create_cat
