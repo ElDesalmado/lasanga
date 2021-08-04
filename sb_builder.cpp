@@ -15,7 +15,7 @@ struct NonTemplate
 
 // This part should be defined in user's generic/layer.h header
 
-namespace name_tags
+namespace alias
 {
     struct A;
 
@@ -23,7 +23,7 @@ namespace name_tags
     struct B;
 
     struct C;
-}   // namespace name_tags
+}   // namespace alias
 
 // TODO: function build(Builder, tag<NameOrType>) to deduce return type? (Object or Tuple)
 
@@ -33,10 +33,10 @@ class Layer
 public:
     template<typename BuilderT>
     Layer(BuilderT &&builder)
-      : a_(builder(eld::name_t<name_tags::A>())),
-        b_(builder(eld::name_tt<name_tags::B>())),
-        c_(builder(eld::dname_t<Layer, name_tags::C>())),
-        nt_(builder(eld::build_t<NonTemplate>()))
+      : a_(builder(eld::name_tag<alias::A>())),
+        b_(builder(eld::name_tag<alias::B>())),
+        c_(builder(eld::dname_t<Layer, alias::C>())),
+        nt_(builder(eld::build_tag<NonTemplate>()))
     {
     }
 
@@ -58,7 +58,7 @@ private:
 template<>
 struct eld::get_name_list<Layer>
 {
-    using type = type_list<name_tags::A, type_tt<name_tags::B>, name_tags::C>;
+    using type = type_list<alias::A, type_tt<alias::B>, alias::C>;
 };
 
 // end of user-defined header
@@ -96,14 +96,14 @@ struct Builder
 
     NonTemplate operator()(eld::build_t<NonTemplate>) { return {}; }
 
-    Person operator()(eld::name_t<name_tags::A>) { return {}; }
+    Person operator()(eld::name_t<alias::A>) { return {}; }
 
-    Dog operator()(eld::name_tt<name_tags::B>) { return {}; }
+    Dog operator()(eld::name_tt<alias::B>) { return {}; }
 
-    Cat operator()(eld::name_t<name_tags::C>) { return {}; }
+    Cat operator()(eld::name_t<alias::C>) { return {}; }
 
     template<template<typename...> class NotSpecified>
-    Cat operator()(eld::dname_t<NotSpecified, name_tags::C>)
+    Cat operator()(eld::dname_t<NotSpecified, alias::C>)
     {
         return {};
     }
@@ -117,17 +117,17 @@ struct Builder
 
 // This must be automatically generated for the Builder in case NameTag was bound
 template<>
-struct Builder::type_by_name<name_tags::A>
+struct Builder::type_by_name<alias::A>
 {
     using type = Person;
 };
 template<>
-struct Builder::type_by_name<eld::type_tt<name_tags::B>>
+struct Builder::type_by_name<eld::type_tt<alias::B>>
 {
     using type = Dog;
 };
 template<>
-struct Builder::type_by_name<name_tags::C>
+struct Builder::type_by_name<alias::C>
 {
     using type = Cat;
 };
@@ -145,25 +145,37 @@ int main(int, char **)
 {
     namespace detail = eld::detail;
 
-    eld::wrap_factory (&create_person)(eld::build_t<Person>()).speak();
-    eld::wrap_factory([]() { return Dog(); })(eld::build_t<Dog>()).speak();
-    eld::wrap_factory<create_cat>()(eld::build_t<Cat>()).speak();
+    eld::wrap_factory (&create_person)(eld::build_tag<Person>()).speak();
+    eld::wrap_factory([]() { return Dog(); })(eld::build_tag<Dog>()).speak();
+    eld::wrap_factory<create_cat>()(eld::build_tag<Cat>()).speak();
 
     // named
-    eld::named_factory<name_tags::A> (&create_person)(eld::name_t<name_tags::A>()).speak();
-    eld::named_factory<name_tags::B>([]() { return Dog(); })(eld::name_tt<name_tags::B>()).speak();
-    eld::named_factory<name_tags::C, create_cat>()(eld::name_t<name_tags::C>()).speak();
+    eld::named_factory<alias::A> (&create_person)(eld::name_tag<alias::A>()).speak();
+    eld::named_factory<alias::B>([]() { return Dog(); })(eld::name_tag<alias::B>()).speak();
+    eld::named_factory<alias::C, create_cat, Layer>()(eld::name_tag<alias::C>()).speak();
+    eld::named_factory<alias::C, create_cat, Layer>()(eld::dname_t<Layer, alias::C>()).speak();
+
+    auto bldr = eld::make_builder(eld::named_factory<alias::A>(&create_person),
+                                  eld::named_factory<alias::B>([]() { return Dog(); }),
+                                  eld::named_factory<alias::C, create_cat, Layer>());
 
     auto builder =   // TODO: make it work
-        //                                    eld::make_builder(eld::named_factory<name_tags::A>(&create_person),
-        //                                                                 eld::named_factory<name_tags::B>([]()
-        //                                                                 { return Dog();
-        //                                                                 }),
-        //                                                                 eld::named_factory<name_tags::C,
-        //                                                                 create_cat>());
-        Builder();
+        eld::make_builder(eld::named_factory<alias::A>(&create_person),
+                          eld::named_factory<alias::B>([]() { return Dog(); }),
+                          eld::named_factory<alias::C, create_cat, Layer>(),
+                          eld::wrap_factory([]() { return NonTemplate(); }));
 
-    auto deducedLayer = eld::make_lasanga<Layer>(builder);
+    builder(eld::build_tag<Person>()).speak();
+    builder(eld::build_tag<Dog>()).speak();
+    builder(eld::build_tag<Cat>()).speak();
+
+    builder(eld::name_tag<alias::A>()).speak();
+    builder(eld::name_tag<alias::B>()).speak();
+    builder(eld::name_tag<alias::C>()).speak();
+    builder(eld::dname_t<Layer, alias::C>()).speak();
+
+    auto deducedLayer = Layer<Person, Dog, Cat>(Builder());
+    //        eld::make_lasanga<Layer>(builder); // TODO: make it work
     deducedLayer.speak_all();
 
     //
