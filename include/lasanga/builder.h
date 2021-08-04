@@ -262,6 +262,28 @@ namespace eld
 
     namespace detail
     {
+        template<typename NameTag>
+        struct is_unnamed : std::is_same<NameTag, unnamed>
+        {
+        };
+
+        template<template<typename...> class TNameTag>
+        struct is_unnamed<type_tt<TNameTag>> : traits::is_same_tt<TNameTag, unspecified_tt>
+        {
+        };
+
+        template<typename NameTag>
+        struct get_name_t
+        {
+            using type = name_t<NameTag>;
+        };
+
+        template<template<typename...> class TNameTag>
+        struct get_name_t<type_tt<TNameTag>>
+        {
+            using type = name_tt<TNameTag>;
+        };
+
         template<typename Callable,
                  typename Type,
                  typename NameTag = unnamed,
@@ -272,6 +294,8 @@ namespace eld
         public:
             using type = Type;
             using name_tag = NameTag;
+
+            // TODO: checks if name_tag is a wrapped template tag -> type_tt<TNameTag>
 
             // TODO: refactor this?
             static_assert(
@@ -297,24 +321,25 @@ namespace eld
 
             decltype(auto) operator()(eld::build_t<type>) { return factory_(); }
 
-            template<bool Specified = !traits::is_unspecified<GenericClass>::value,
+            template<bool Specified = !traits::is_same_tt<GenericClass, unspecified_tt>::value,
                      typename std::enable_if_t<Specified, int> * = nullptr>
             decltype(auto) operator()(eld::build_tt<GenericClass>)
             {
                 return operator()(eld::build_t<type>());
             }
 
-            // TODO: (?) conditional to use name_tt<type> if name_tag is a template
-            template<bool Named = !std::is_same_v<name_tag, unnamed>,
+            template<bool Named = !detail::is_unnamed<name_tag>::value,
                      typename std::enable_if_t<Named, int> * = nullptr>
-            decltype(auto) operator()(eld::name_t<name_tag>)
+            decltype(auto) operator()(typename detail::get_name_t<name_tag>::type)
             {
                 return operator()(eld::build_t<type>());
             }
 
-            template<bool Named = !std::is_same_v<name_tag, unnamed>,
-                     bool Specified = !traits::is_unspecified<GenericContextClass>::value,
-                     typename std::enable_if_t<Named and Specified, int> * = nullptr>
+            // TODO: generic version for dname_t and dname_tt (?)
+            template<
+                bool Named = !detail::is_unnamed<name_tag>::value,
+                bool Specified = !traits::is_same_tt<GenericContextClass, unspecified_tt>::value,
+                typename std::enable_if_t<Named and Specified, int> * = nullptr>
             decltype(auto) operator()(eld::dname_t<GenericContextClass, name_tag>)
             {
                 return operator()(eld::build_t<type>());

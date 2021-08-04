@@ -151,18 +151,16 @@ int main(int, char **)
 
     // named
     eld::named_factory<name_tags::A> (&create_person)(eld::name_t<name_tags::A>()).speak();
-    //    eld::named_factory<name_tags::B>([]() { return Dog();
-    //    })(eld::name_tt<name_tags::B>()).speak(); // TODO: fix!
+    eld::named_factory<name_tags::B>([]() { return Dog(); })(eld::name_tt<name_tags::B>()).speak();
     eld::named_factory<name_tags::C, create_cat>()(eld::name_t<name_tags::C>()).speak();
 
-    auto
-        builder =   // TODO: make it work
-                    //                eld::make_builder(eld::named_factory<name_tags::A>(&create_person),
-                    //                                             eld::named_factory<name_tags::B>([]()
-                    //                                             { return Dog();
-                    //                                             }),
-                    //                                             eld::named_factory<name_tags::C,
-                    //                                             create_cat>());
+    auto builder =   // TODO: make it work
+        //                                    eld::make_builder(eld::named_factory<name_tags::A>(&create_person),
+        //                                                                 eld::named_factory<name_tags::B>([]()
+        //                                                                 { return Dog();
+        //                                                                 }),
+        //                                                                 eld::named_factory<name_tags::C,
+        //                                                                 create_cat>());
         Builder();
 
     auto deducedLayer = eld::make_lasanga<Layer>(builder);
