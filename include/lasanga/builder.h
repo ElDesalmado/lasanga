@@ -2,10 +2,42 @@
 
 #include "lasanga/traits.h"
 
+#include <type_traits>
+#include <utility>
+
 namespace eld
 {
     template<typename...>
     struct type_list;
+
+    namespace traits
+    {
+        template<typename>
+        struct type_list_size;
+
+        template<typename... Types>
+        struct type_list_size<type_list<Types...>>
+        {
+            constexpr static size_t value = sizeof...(Types);
+        };
+
+        template<size_t, typename>
+        struct element_type;
+
+        template<size_t Indx, typename... Types>
+        struct element_type<Indx, type_list<Types...>>
+        {
+            using type = std::tuple_element_t<Indx, std::tuple<Types...>>;
+        };
+
+        // TODO: Should I allow this?
+        template<size_t Indx>
+        struct element_type<Indx, type_list<>>
+        {
+            using type = not_found_t;
+        };
+
+    }   // namespace traits
 
     /**
      * Wrapper type to store unspecialized template class (for example, within a type_list)
@@ -80,10 +112,15 @@ namespace eld
         namespace detail
         {
             // TODO: implement.
-            template<typename BuilderT, typename NameTag>
+            template<typename BuilderT,
+                     typename NameTag,
+                     template<typename...> class GenericContextClass = unspecified_tt>
             struct type_by_name
             {
-                using type = typename BuilderT::template type_by_name<NameTag>::type;
+                using type =
+                    typename BuilderT::template type_by_name<NameTag, GenericContextClass>::type;
+                static_assert(!std::is_same_v<type, not_found_t>,
+                              "NameTag is not registered within the BuilderT");
             };
         }   // namespace detail
 
@@ -157,9 +194,70 @@ namespace eld
 
     namespace detail
     {
+        template<typename Tuple>
+        struct type_list_from_tuple;
+
+        template<typename... Types>
+        struct type_list_from_tuple<std::tuple<Types...>>
+        {
+            using type = type_list<std::decay_t<Types>...>;
+        };
+
+        // TODO: add usage of GenericContextType to implementation
+        template<typename NameTag, typename... DesignatedFactories>
+        struct map_factories
+        {
+            using type = typename type_list_from_tuple<decltype(std::tuple_cat(
+                std::declval<std::conditional_t<
+                    std::is_same_v<NameTag, typename DesignatedFactories::name_tag>,
+                    std::tuple<DesignatedFactories>,
+                    std::tuple<>>>()...))>::type;
+        };
+
+        // TODO: add usage of GenericContextType to implementation
+        template<typename NameTag,
+                 template<typename...>
+                 class GenericContextClass,
+                 typename... DesignatedFactories>
+        struct get_type_by_name
+        {
+            static_assert(!std::is_same_v<NameTag, unnamed>, "NameTag must not be unnamed");
+            using list = typename map_factories<NameTag, DesignatedFactories...>::type;
+
+            static_assert(traits::type_list_size<list>::value <= 1, "Several NameTags found!");
+
+            using type = typename traits::element_type<0, list>::type;
+        };
+
+        // implement search by NameTag
+    }   // namespace detail
+
+    template<typename... DesignatedFactories>
+    class builder : DesignatedFactories...
+    {
+    public:
+        using DesignatedFactories::operator()...;
+
+        template<typename... FactoriesT>
+        constexpr builder(FactoriesT &&...factories)
+          : DesignatedFactories(std::forward<FactoriesT>(factories))...
+        {
+        }
+
+        template<typename NameTag, template<typename...> class GenericContextType = unspecified_tt>
+        using type_by_name =
+            detail::get_type_by_name<NameTag, GenericContextType, DesignatedFactories...>;
+
+    private:
+    };
+
+    // TODO: function to get template tree from builder?
+
+    namespace detail
+    {
         template<typename Callable,
                  typename Type,
-                 typename NameTag = Type,
+                 typename NameTag = unnamed,
                  template<typename...> class GenericContextClass = unspecified_tt,
                  template<typename...> class GenericClass = unspecified_tt>
         class designated_factory
@@ -178,7 +276,7 @@ namespace eld
                      typename std::enable_if_t<sizeof...(ArgsT) ||   //
                                                    std::is_default_constructible_v<Callable>,
                                                int> * = nullptr>
-            explicit designated_factory(ArgsT &&...args)   //
+            constexpr explicit designated_factory(ArgsT &&...args)   //
               : factory_(std::forward<ArgsT>(args)...)
             {
             }
@@ -199,14 +297,17 @@ namespace eld
                 return operator()(eld::build_t<type>());
             }
 
-            // TODO: conditional to use name_tt<type> if name_tag is a template
+            // TODO: (?) conditional to use name_tt<type> if name_tag is a template
+            template<bool Named = !std::is_same_v<name_tag, unnamed>,
+                     typename std::enable_if_t<Named, int> * = nullptr>
             decltype(auto) operator()(eld::name_t<name_tag>)
             {
                 return operator()(eld::build_t<type>());
             }
 
-            template<bool Specified = !traits::is_unspecified<GenericContextClass>::value,
-                     typename std::enable_if_t<Specified, int> * = nullptr>
+            template<bool Named = !std::is_same_v<name_tag, unnamed>,
+                     bool Specified = !traits::is_unspecified<GenericContextClass>::value,
+                     typename std::enable_if_t<Named and Specified, int> * = nullptr>
             decltype(auto) operator()(eld::dname_t<GenericContextClass, name_tag>)
             {
                 return operator()(eld::build_t<type>());

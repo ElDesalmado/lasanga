@@ -117,7 +117,7 @@ struct Builder
     // if this is not declared within the Builder, name_t must be used
     //    Cat operator()(dname_t<Layer, name_tags::C>) { return {}; }
 
-    template<typename NameTag>
+    template<typename NameTag, template<typename...> class = eld::unspecified_tt>
     struct type_by_name;
 };
 

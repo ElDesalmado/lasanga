@@ -29,6 +29,7 @@ namespace eld
     constexpr tag::default_call default_call_tag;
 
     struct unnamed;
+    struct not_found_t;
 
     template<typename Name, typename T, typename...>
     struct descriptor_t;
