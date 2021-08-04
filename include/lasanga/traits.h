@@ -1,8 +1,8 @@
 ﻿#pragma once
 
+#include <cstddef>
 #include <tuple>
 #include <type_traits>
-#include <cstddef>
 #include <utility>
 
 namespace eld
@@ -22,6 +22,9 @@ namespace eld
         };
 
     }   // namespace tag
+
+    template<typename...>
+    struct unspecified_tt;
 
     constexpr tag::default_call default_call_tag;
 
@@ -118,6 +121,36 @@ namespace eld
         struct get_name<Tag<Name, T, U...>>
         {
             using type = Name;
+        };
+
+        template<template<typename...> class ATT, template<typename...> class BTT>
+        struct is_same_tt : std::false_type
+        {
+        };
+
+        template<template<typename...> class TT>
+        struct is_same_tt<TT, TT> : std::true_type
+        {
+        };
+
+        template<typename T, typename From>
+        struct is_constructible : std::is_constructible<T, From>
+        {
+        };
+
+        template<typename T, typename... Args>
+        struct is_constructible<T, std::tuple<Args...>> : std::is_constructible<T, Args...>
+        {
+        };
+
+        template<template<typename...> class>
+        struct is_unspecified : std::false_type
+        {
+        };
+
+        template<>
+        struct is_unspecified<unspecified_tt> : std::true_type
+        {
         };
 
     }   // namespace traits

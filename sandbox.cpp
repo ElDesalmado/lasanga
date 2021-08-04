@@ -1,13 +1,13 @@
 ﻿#include "lasanga/builder.h"
 #include "lasanga/custom_override.h"
-#include "lasanga/lasanga.h"
+#include "lasanga/layer.h"
 
 #include <iostream>
 
 /**
  * Given a builder-aware NonTemplate class with an N <= M nested members and a builder composed of
  * M factories that are able to construct N nested members, the following is a valid expression.
- *      auto builder = make_builder(wrap_factory<M>()...);
+ *      auto builder = make_builder(wrap_factory_old<M>()...);
  *      auto instance = make_lasanga<NonTemplate>(builder);
  * Where `builder` is an object of generic template builder class specialized from M factories,
  * `instance` is an object of user-defined NonTemplate class that uses `builder` to construct its
@@ -16,8 +16,8 @@
  * Given a builder-aware Template class with P template parameters (which may be template classes
  * with J template parameters) and N <= M(P(J)) nested members and a builder composed of M(P(J))
  * factories that are able to construct N nested members the following is a valid expression.
- *      auto builder = make_builder(wrap_factory<P>()...
- *                                  wrap_factory<J>()...);
+ *      auto builder = make_builder(wrap_factory_old<P>()...
+ *                                  wrap_factory_old<J>()...);
  *      auto instance = make_lasanga<Template>(builder);
  * Where...
  * `instance` is an object of deduced and fully specialized template class Template.
@@ -310,9 +310,9 @@ struct create_cat
 
 int main(int, char **)
 {
-    auto builder = make_builder(wrap_factory(&create_person),
-                                wrap_factory<create_cat>(),
-                                wrap_factory([]() { return dog(); }));
+    auto builder = make_builder(wrap_factory_old(&create_person),
+                                wrap_factory_old<create_cat>(),
+                                wrap_factory_old([]() { return dog(); }));
 
     builder(build_t<person>()).speak();
     builder(build_t<cat>()).speak();
@@ -322,26 +322,26 @@ int main(int, char **)
 
     create_impl createImpl{};
 
-    auto designatedFactoryImpl = detail::designated_factory<create_impl, impl>();
+    auto designatedFactoryImpl = detail::designated_factory_old<create_impl, impl>();
     impl i = designatedFactoryImpl(build_t<impl>());
-    auto designatedFactoryGeneric = detail::designated_factory<create_impl, generic_class<impl>>();
+    auto designatedFactoryGeneric = detail::designated_factory_old<create_impl, generic_class<impl>>();
     impl i2 = designatedFactoryGeneric(build_tt<generic_class>());
 
     auto designatedFactoryNamedImpl =
-        detail::designated_factory<create_impl, descriptor_t<name_impl, impl>>();
+        detail::designated_factory_old<create_impl, descriptor_t<name_impl, impl>>();
     impl iNamed = designatedFactoryNamedImpl(build_t<name_impl>());
 
-    impl fromTemplateArgument = wrap_factory<create_impl>()(build_t<impl>());
-    impl fromFunctionPointer = wrap_factory(&func_create_impl)(build_t<impl>());
-    impl fromCallableClass = wrap_factory(create_impl())(build_t<impl>());
-    impl fromLambda = wrap_factory([]() { return impl(4, 8.15); })(build_t<impl>());
+    impl fromTemplateArgument = wrap_factory_old<create_impl>()(build_t<impl>());
+    impl fromFunctionPointer = wrap_factory_old(&func_create_impl)(build_t<impl>());
+    impl fromCallableClass = wrap_factory_old(create_impl())(build_t<impl>());
+    impl fromLambda = wrap_factory_old([]() { return impl(4, 8.15); })(build_t<impl>());
 
     auto implLambda = []() { return impl(4, 8.15); };
     static_assert(std::is_same_v<impl, decltype(implLambda())>);
-    impl fromLambda2 = wrap_factory(implLambda)(build_t<impl>());   //
+    impl fromLambda2 = wrap_factory_old(implLambda)(build_t<impl>());   //
 
     impl fromGenericTemplate =
-        wrap_factory<generic_class, create_impl>()(build_tt<generic_class>());
+        wrap_factory_old<generic_class, create_impl>()(build_tt<generic_class>());
 
     return 0;
 }
