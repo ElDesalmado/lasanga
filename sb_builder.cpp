@@ -78,13 +78,8 @@ struct Cat
     void speak() { std::cout << "Cat" << std::endl; }
 };
 
-
-
 namespace traits
 {
-
-
-
 }   // namespace traits
 
 namespace detail
@@ -92,7 +87,6 @@ namespace detail
 }
 
 // TODO: variadic list for parameters other than Type?
-
 
 // TODO: create Builder using make_builder function
 // TODO: make builder using name tags and designated factories
@@ -138,9 +132,37 @@ struct Builder::type_by_name<name_tags::C>
     using type = Cat;
 };
 
+// factories
+
+struct create_cat
+{
+    Cat operator()() { return {}; }
+};
+
+Person create_person() { return {}; }
+
 int main(int, char **)
 {
-    auto builder =   // make_builder(
+    namespace detail = eld::detail;
+
+    eld::wrap_factory (&create_person)(eld::build_t<Person>()).speak();
+    eld::wrap_factory([]() { return Dog(); })(eld::build_t<Dog>()).speak();
+    eld::wrap_factory<create_cat>()(eld::build_t<Cat>()).speak();
+
+    // named
+    eld::named_factory<name_tags::A> (&create_person)(eld::name_t<name_tags::A>()).speak();
+    //    eld::named_factory<name_tags::B>([]() { return Dog();
+    //    })(eld::name_tt<name_tags::B>()).speak(); // TODO: fix!
+    eld::named_factory<name_tags::C, create_cat>()(eld::name_t<name_tags::C>()).speak();
+
+    auto
+        builder =   // TODO: make it work
+                    //                eld::make_builder(eld::named_factory<name_tags::A>(&create_person),
+                    //                                             eld::named_factory<name_tags::B>([]()
+                    //                                             { return Dog();
+                    //                                             }),
+                    //                                             eld::named_factory<name_tags::C,
+                    //                                             create_cat>());
         Builder();
 
     auto deducedLayer = eld::make_lasanga<Layer>(builder);

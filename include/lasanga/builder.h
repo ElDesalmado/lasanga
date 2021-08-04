@@ -251,6 +251,13 @@ namespace eld
     private:
     };
 
+    template<typename... DesignatedFactories>
+    constexpr auto make_builder(DesignatedFactories &&...factories)
+    {
+        return builder<std::decay_t<DesignatedFactories>...>(
+            std::forward<DesignatedFactories>(factories)...);
+    }
+
     // TODO: function to get template tree from builder?
 
     namespace detail
@@ -268,7 +275,7 @@ namespace eld
 
             // TODO: refactor this?
             static_assert(
-                std::is_same_v<type, decltype(std::declval<Callable>()())> ||
+                std::is_same_v<type, decltype(std::declval<Callable>()())> or
                     traits::is_constructible<type, decltype(std::declval<Callable>()())>::value,
                 "Callable can't be used to construct an object or Type");
 
@@ -317,6 +324,78 @@ namespace eld
             Callable factory_;
         };
     }   // namespace detail
+
+    template<typename Callable>
+    constexpr auto wrap_factory(Callable &&callable)
+    {
+        using callable_type = std::decay_t<Callable>;
+        using constructed_type = decltype(std::declval<callable_type>()());
+        static_assert(!traits::is_tuple<constructed_type>(),
+                      "Factories that construct tuples are not allowed. Use special overload and "
+                      "explicitly specify constructed type");
+        return detail::designated_factory<std::decay_t<Callable>, constructed_type>(
+            std::forward<Callable>(callable));
+    }
+
+    template<typename Callable>
+    constexpr auto wrap_factory()
+    {
+        return wrap_factory<Callable>(Callable());
+    }
+
+    template<typename Constructed>
+    constexpr auto wrap_factory(Constructed (*fPtr)())
+    {
+        return wrap_factory<std::decay_t<decltype(fPtr)>>(std::move(fPtr));
+    }
+
+    template<typename NameTag, typename Callable>
+    constexpr auto named_factory(Callable &&callable)
+    {
+        static_assert(!std::is_same_v<NameTag, unnamed>, "NamedTag must not be unnamed.");
+
+        using callable_type = std::decay_t<Callable>;
+        using constructed_type = decltype(std::declval<callable_type>()());
+        static_assert(!traits::is_tuple<constructed_type>(),
+                      "Factories that construct tuples are not allowed. Use special overload and "
+                      "explicitly specify constructed type");
+        return detail::designated_factory<std::decay_t<Callable>, constructed_type, NameTag>(
+            std::forward<Callable>(callable));
+    }
+
+    template<template<typename...> class NameTagT, typename Callable>
+    constexpr auto named_factory(Callable &&callable)
+    {
+        static_assert(!traits::is_same_tt<NameTagT, unspecified_tt>::value,
+                      "Template NamedTag must not be unspecified.");
+
+        return named_factory<type_tt<NameTagT>, std::decay_t<Callable>>(
+            std::forward<Callable>(callable));
+    }
+
+    template<typename NameTag, typename Callable>
+    constexpr auto named_factory()
+    {
+        return named_factory<NameTag, Callable>(Callable());
+    }
+
+    template<template<typename...> class NameTagT, typename Callable>
+    constexpr auto named_factory()
+    {
+        return named_factory<NameTagT, Callable>(Callable());
+    }
+
+    template<typename NameTag, typename Constructed>
+    constexpr auto named_factory(Constructed (*fPtr)())
+    {
+        return named_factory<NameTag, std::decay_t<decltype(fPtr)>>(std::move(fPtr));
+    }
+
+    template<template<typename...> class NameTagT, typename Constructed>
+    constexpr auto named_factory(Constructed (*fPtr)())
+    {
+        return named_factory<NameTagT, std::decay_t<decltype(fPtr)>>(std::move(fPtr));
+    }
 
     /**
      * TODO:
@@ -494,17 +573,6 @@ namespace eld
     {
         return detail::designated_factory_old<NameTag, std::decay_t<Callable>>(
             std::forward<Callable>(callable));
-    }
-
-    /**
-     *
-     * @tparam ArgsT list of designated factories
-     * @return
-     */
-    template<typename... ArgsT>
-    constexpr auto make_builder(ArgsT &&...args)
-    {
-        return detail::builder<std::decay_t<ArgsT>...>(std::forward<ArgsT>(args)...);
     }
 
 }   // namespace eld
