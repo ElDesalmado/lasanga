@@ -82,7 +82,7 @@ namespace eld
             const type &get() const
             {
                 return t_;
-            };
+            }
 
             template<typename Tag,
                      typename = std::enable_if_t<
@@ -90,7 +90,7 @@ namespace eld
             type &get()
             {
                 return t_;
-            };
+            }
 
         private:
             type t_;

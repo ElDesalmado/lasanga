@@ -101,10 +101,6 @@ int main(int, char **)
     eld::named_factory<alias::C, create_cat, Layer>()(eld::name_tag<alias::C>()).speak();
     eld::named_factory<alias::C, create_cat, Layer>()(eld::dname_t<Layer, alias::C>()).speak();
 
-    auto bldr = eld::make_builder(eld::named_factory<alias::A>(&create_person),
-                                  eld::named_factory<alias::B>([]() { return Dog(); }),
-                                  eld::named_factory<alias::C, create_cat, Layer>());
-
     auto builder =   // TODO: make it work
         eld::make_builder(eld::named_factory<alias::A>(&create_person),
                           eld::named_factory<alias::B>([]() { return Dog(); }),
