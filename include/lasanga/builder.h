@@ -191,6 +191,9 @@ namespace eld
              typename BuilderT>
     constexpr auto make_lasanga(BuilderT &&builder)
     {
+        static_assert(traits::is_complete<GetNameList<GenericClass, Modifiers...>>::value,
+                      "Name list has not been defined for GenericClass");
+
         using name_list = typename GetNameList<GenericClass, Modifiers...>::type;
         using type_list_t = typename traits::get_type_list<std::decay_t<BuilderT>, name_list>::type;
 
