@@ -51,7 +51,7 @@ namespace eld
 
     }   // namespace detail
 
-    template<template<typename...> class SignatureTag, typename T, typename... U, typename... ArgsT>
+    template<template<typename...> class SignatureTag, typename... U, typename T, typename... ArgsT>
     constexpr decltype(auto) invoke(tag::default_call, T &&obj, ArgsT &&...args)
     {
         using signature_type = SignatureTag<std::decay_t<T>, U...>;
@@ -63,7 +63,7 @@ namespace eld
             traits::is_complete<signature_type>());
     }
 
-    template<template<typename...> class SignatureTag, typename T, typename... U, typename... ArgsT>
+    template<template<typename...> class SignatureTag, typename... U, typename T, typename... ArgsT>
     constexpr decltype(auto) invoke(T &&obj, ArgsT &&...args)
     {
         using signature_type = SignatureTag<std::decay_t<T>, U...>;
