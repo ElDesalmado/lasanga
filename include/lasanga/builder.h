@@ -83,6 +83,16 @@ namespace eld
     }
 
     /**
+     * Build tag. Using DependentName to specialize an object to build by NameTag.
+     * @tparam DependentName NameTag or a typename of a class that an object depends on.
+     * @tparam NameTag
+     */
+    template<typename DependentName, typename NameTag, typename... Modifiers>
+    struct d_name_t
+    {
+    };
+
+    /**
      * Builder tag. Used to construct an object within a GenericClass by NameTag and a set of
      * Modifiers
      * @tparam GenericClass Unspecialized template class that owns an object to be constructed.
@@ -91,9 +101,36 @@ namespace eld
      * contexts and GenericClass'es
      */
     template<template<typename...> class GenericClass, typename NameTag, typename... Modifiers>
-    struct dname_t
+    struct d_name_tt
     {
     };
+
+    /**
+     * Helper function to resolve between typename and template DependentName
+     * @tparam DependentName
+     * @tparam NameTag
+     * @tparam Modifiers
+     * @return
+     */
+    template <typename DependentName, typename NameTag, typename ... Modifiers>
+    constexpr d_name_t<DependentName, NameTag, Modifiers...> d_name_tag()
+    {
+        return {};
+    }
+
+    /**
+     * Helper function to resolve between typename and template DependentName
+     * @tparam GenericClass
+     * @tparam NameTag
+     * @tparam Modifiers
+     * @return
+     */
+    template<template<typename...> class GenericClass, typename NameTag, typename... Modifiers>
+    constexpr d_name_tt<GenericClass, NameTag, Modifiers...> d_name_tag()
+    {
+        return {};
+    }
+
 
     /**
      * Build tag. Used to construct an object by its type.
@@ -362,7 +399,7 @@ namespace eld
             template<bool Named = !detail::is_unnamed<name_tag>::value,
                      bool Specified = !traits::is_same_tt<DependsOnT, unspecified_tt>::value,
                      typename std::enable_if_t<Named and Specified, int> * = nullptr>
-            decltype(auto) operator()(eld::dname_t<DependsOnT, name_tag>)
+            decltype(auto) operator()(eld::d_name_tt<DependsOnT, name_tag>)
             {
                 return operator()(eld::build_t<type>());
             }

@@ -35,7 +35,7 @@ public:
     Layer(BuilderT &&builder)
       : a_(builder(eld::name_tag<alias::A>())),
         b_(builder(eld::name_tag<alias::B>())),
-        c_(builder(eld::dname_t<Layer, alias::C>())),
+        c_(builder(eld::d_name_tt<Layer, alias::C>())),
         nt_(builder(eld::build_tag<NonTemplate>()))
     {
     }
@@ -99,7 +99,7 @@ int main(int, char **)
     eld::named_factory<alias::A> (&create_person)(eld::name_tag<alias::A>()).speak();
     eld::named_factory<alias::B>([]() { return Dog(); })(eld::name_tag<alias::B>()).speak();
     eld::named_factory<alias::C, create_cat, Layer>()(eld::name_tag<alias::C>()).speak();
-    eld::named_factory<alias::C, create_cat, Layer>()(eld::dname_t<Layer, alias::C>()).speak();
+    eld::named_factory<alias::C, create_cat, Layer>()(eld::d_name_tt<Layer, alias::C>()).speak();
 
     auto builder =   // TODO: make it work
         eld::make_builder(eld::named_factory<alias::A>(&create_person),
@@ -114,7 +114,7 @@ int main(int, char **)
     builder(eld::name_tag<alias::A>()).speak();
     builder(eld::name_tag<alias::B>()).speak();
     builder(eld::name_tag<alias::C>()).speak();
-    builder(eld::dname_t<Layer, alias::C>()).speak();
+    builder(eld::d_name_tt<Layer, alias::C>()).speak();
 
     auto deducedLayer = eld::make_lasanga<Layer>(builder);
     deducedLayer.speak_all();
