@@ -195,7 +195,7 @@ namespace traits
     using name_tag = typename DFactoryT::name_tag;
 
     template<typename DFactoryT>
-    using type = typename DFactoryT::type;
+    using value_type = typename DFactoryT::value_type;
 
     template<typename DFactoryT>
     using depends_on_type = typename DFactoryT::depends_on_type;
@@ -244,8 +244,7 @@ public:
             map_tuple<wrapped_predicate<traits::is_unnamed>, wrapped_predicate<same_type, T>>(
                 designatedFactories_);
 
-        return construct(buildTag,
-                         mappedTuple);
+        return construct(buildTag, mappedTuple);
     }
 
     template<typename NameTag>
@@ -284,8 +283,7 @@ public:
             map_tuple<wrapped_predicate<traits::is_dependent>,
                       wrapped_predicate<same_depends_on, DependsOnT>>(designatedFactories_);
 
-        return construct(dNameTag,
-                         mappedTuple);
+        return construct(dNameTag, mappedTuple);
     }
 
     template<typename DependentName, template<typename...> class TNameTagT, typename... Modifiers>
@@ -315,21 +313,19 @@ private:
     using same_name_tag = std::is_same<traits::name_tag<FactoryT>, NameTag>;
 
     template<typename FactoryT, typename Type>
-    using same_type = std::is_same<traits::type<FactoryT>, Type>;
+    using same_type = std::is_same<traits::value_type<FactoryT>, Type>;
 
     template<typename FactoryT, typename DependsOnT>
     using same_depends_on = std::is_same<traits::depends_on_type<FactoryT>, DependsOnT>;
 
     template<typename T, typename... Factories>
-    decltype(auto) construct(eld::build_t<T>,
-                             std::tuple<Factories &...> tupleFactories)
+    decltype(auto) construct(eld::build_t<T>, std::tuple<Factories &...> tupleFactories)
     {
         return construct(tupleFactories);
     }
 
     template<typename T>
-    decltype(auto) construct(eld::build_t<T>,
-                             std::tuple<>)
+    decltype(auto) construct(eld::build_t<T>, std::tuple<>)
     {
         auto mappedTuple =
             map_tuple<wrapped_predicate<traits::is_named>, wrapped_predicate<same_type, T>>(
@@ -345,8 +341,7 @@ private:
     }
 
     template<typename DependsOnT, typename NameTag>
-    decltype(auto) construct(eld::d_name_t<DependsOnT, NameTag>,
-                             std::tuple<>)
+    decltype(auto) construct(eld::d_name_t<DependsOnT, NameTag>, std::tuple<>)
     {
         return (*this)(eld::name_t<NameTag>());
     }
@@ -374,6 +369,39 @@ constexpr auto make_builder(DesignatedFactories &&...factories)
     return builder<std::decay_t<DesignatedFactories>...>(
         std::forward<DesignatedFactories>(factories)...);
 }
+
+// TODO: designated factory with multiple callable types?
+template<typename CallableT,
+         typename ValueTypeT,
+         typename NameTagT = eld::unnamed,
+         typename DependsOnT = eld::unnamed>
+class designated_factory
+{
+public:
+    using value_type = ValueTypeT;
+    using name_tag = NameTagT;
+    using depends_on_type = DependsOnT;
+
+    template<bool DefaultConstructible = std::is_destructible_v<CallableT>,
+             typename... ArgsT,
+             typename std::enable_if_t<sizeof...(ArgsT) || DefaultConstructible, int> * = nullptr>
+    designated_factory(ArgsT &&...argsT)   //
+      : factory_(std::forward<ArgsT>(argsT)...)
+    {
+    }
+
+    template<bool MoveConstructible = std::is_move_constructible_v<CallableT>,
+             typename std::enable_if_t<MoveConstructible, int> * = nullptr>
+    explicit designated_factory(designated_factory &&other) noexcept   //
+      : factory_(std::move(other.factory_))
+    {
+    }
+
+    decltype(auto) operator()() { return factory_(); }
+
+private:
+    CallableT factory_;
+};
 
 int main(int, char **)
 {
@@ -407,12 +435,14 @@ int main(int, char **)
 
     auto newBuilder = ::make_builder(eld::wrap_factory(&create_person),
                                      eld::named_factory<alias::A>(&create_person),
-                                     eld::named_factory<alias::B>([]() { return Dog(); }));
+                                     eld::named_factory<alias::B>([]() { return Dog(); }),
+                                     eld::named_factory<alias::C, alias::B>([]() { return Cat(); }));
 
     newBuilder(eld::build_tag<Person>()).speak();
     newBuilder(eld::name_tag<alias::A>()).speak();
     newBuilder(eld::build_tag<Dog>()).speak();
     newBuilder(eld::name_tag<alias::B>()).speak();
+//    newBuilder(eld::d_name_t<alias::C, alias::A>()).speak();
 
     eld::wrap_factory (&create_person)(eld::build_tag<Person>()).speak();
     eld::wrap_factory([]() { return Dog(); })(eld::build_tag<Dog>()).speak();

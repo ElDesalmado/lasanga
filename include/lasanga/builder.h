@@ -311,7 +311,7 @@ namespace eld
 
             static_assert(traits::type_list_size<list>::value <= 1, "Several NameTags found!");
 
-            using type = typename traits::element_type<0, list>::type::type;
+            using type = typename traits::element_type<0, list>::type::value_type;
         };
 
         // implement search by NameTag
@@ -379,15 +379,15 @@ namespace eld
         class designated_factory
         {
         public:
-            using type = Type;
+            using value_type = Type;
             using name_tag = NameTag;
 
             // TODO: checks if name_tag is a wrapped template tag -> type_tt<TNameTag>
 
             // TODO: refactor this?
             static_assert(
-                std::is_same_v<type, decltype(std::declval<Callable>()())> or
-                    traits::is_constructible<type, decltype(std::declval<Callable>()())>::value,
+                std::is_same_v<value_type, decltype(std::declval<Callable>()())> or
+                    traits::is_constructible<value_type, decltype(std::declval<Callable>()())>::value,
                 "Callable can't be used to construct an object or Type");
 
             template<typename... ArgsT,
@@ -410,20 +410,20 @@ namespace eld
 
             // TODO: remove other operators?
 
-            decltype(auto) operator()(eld::build_t<type>) { return factory_(); }
+            decltype(auto) operator()(eld::build_t<value_type>) { return factory_(); }
 
             template<bool Specified = !traits::is_same_tt<GenericClass, unnamed_tt>::value,
                      typename std::enable_if_t<Specified, int> * = nullptr>
             decltype(auto) operator()(eld::build_tt<GenericClass>)
             {
-                return operator()(eld::build_t<type>());
+                return operator()(eld::build_t<value_type>());
             }
 
             template<bool Named = !detail::is_unnamed<name_tag>::value,
                      typename std::enable_if_t<Named, int> * = nullptr>
             decltype(auto) operator()(typename detail::get_name_t<name_tag>::type)
             {
-                return operator()(eld::build_t<type>());
+                return operator()(eld::build_t<value_type>());
             }
 
             // TODO: generic version for dname_t and dname_tt (?)
@@ -432,7 +432,7 @@ namespace eld
                      typename std::enable_if_t<Named and Specified, int> * = nullptr>
             decltype(auto) operator()(eld::dt_name_t<DependsOnT, name_tag>)
             {
-                return operator()(eld::build_t<type>());
+                return operator()(eld::build_t<value_type>());
             }
 
         private:
