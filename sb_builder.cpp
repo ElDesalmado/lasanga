@@ -35,7 +35,7 @@ public:
     Layer(BuilderT &&builder)
       : a_(builder(eld::name_tag<alias::A>())),
         b_(builder(eld::name_tag<alias::B>())),
-        c_(builder(eld::d_name_tt<Layer, alias::C>())),
+        c_(builder(eld::dt_name_t<Layer, alias::C>())),
         nt_(builder(eld::build_tag<NonTemplate>()))
     {
     }
@@ -197,18 +197,17 @@ namespace traits
     template<typename DFactoryT>
     using type = typename DFactoryT::type;
 
+    template<typename DFactoryT>
+    using depends_on_type = typename DFactoryT::depends_on_type;
+
+    template<typename DFactoryT>
+    using is_dependent = std::negation<eld::detail::is_unnamed<depends_on_type<DFactoryT>>>;
+
 }   // namespace traits
 
 template<typename... DesignatedFactories>
 class builder
 {
-private:
-    template<typename FactoryT, typename NameTag>
-    using same_name_tag = std::is_same<traits::name_tag<FactoryT>, NameTag>;
-
-    template<typename FactoryT, typename Type>
-    using same_type = std::is_same<traits::type<FactoryT>, Type>;
-
 public:
     template<typename... DFactoriesT>
     constexpr explicit builder(DFactoriesT &&...designatedFactories)
@@ -246,8 +245,7 @@ public:
                 designatedFactories_);
 
         return construct(buildTag,
-                         mappedTuple,
-                         std::is_same<decltype(mappedTuple), std::tuple<>>());
+                         mappedTuple);
     }
 
     template<typename NameTag>
@@ -270,24 +268,87 @@ public:
         return (*this)(eld::name_t<eld::type_tt<NameTagT>>());
     }
 
-    private:
+    /**
+     * Build using dependent name tag. Will first try to find a designated factory with requested
+     * DependsOnT. Will fall back to name_t if not found.
+     * @tparam DependsOnT
+     * @tparam NameTag
+     * @tparam ...
+     * @param dNameTag
+     * @return
+     */
+    template<typename DependsOnT, typename NameTag, typename...>
+    decltype(auto) operator()(eld::d_name_t<DependsOnT, NameTag> dNameTag)
+    {
+        auto mappedTuple =
+            map_tuple<wrapped_predicate<traits::is_dependent>,
+                      wrapped_predicate<same_depends_on, DependsOnT>>(designatedFactories_);
+
+        return construct(dNameTag,
+                         mappedTuple);
+    }
+
+    template<typename DependentName, template<typename...> class TNameTagT, typename... Modifiers>
+    decltype(auto) operator()(eld::d_name_tt<DependentName, TNameTagT, Modifiers...>)
+    {
+        return (*this)(eld::d_name_t<DependentName, eld::type_tt<TNameTagT>, Modifiers...>());
+    }
+
+    template<template<typename...> class TDependsOnT, typename NameTag, typename... Modifiers>
+    decltype(auto) operator()(eld::dt_name_t<TDependsOnT, NameTag, Modifiers...>)
+    {
+        return (*this)(eld::d_name_t<eld::type_tt<TDependsOnT>, NameTag, Modifiers...>());
+    }
+
+    template<template<typename...> class TDependsOnT,
+             template<typename...>
+             class TNameTagT,
+             typename... Modifiers>
+    decltype(auto) operator()(eld::dt_name_tt<TDependsOnT, TNameTagT, Modifiers...>)
+    {
+        return (*this)(
+            eld::d_name_t<eld::type_tt<TDependsOnT>, eld::type_tt<TNameTagT>, Modifiers...>());
+    }
+
+private:
+    template<typename FactoryT, typename NameTag>
+    using same_name_tag = std::is_same<traits::name_tag<FactoryT>, NameTag>;
+
+    template<typename FactoryT, typename Type>
+    using same_type = std::is_same<traits::type<FactoryT>, Type>;
+
+    template<typename FactoryT, typename DependsOnT>
+    using same_depends_on = std::is_same<traits::depends_on_type<FactoryT>, DependsOnT>;
+
     template<typename T, typename... Factories>
     decltype(auto) construct(eld::build_t<T>,
-                             std::tuple<Factories &...> tupleFactories,
-                             std::false_type /*is_empty*/)
+                             std::tuple<Factories &...> tupleFactories)
     {
         return construct(tupleFactories);
     }
 
-    template<typename T, typename... Factories>
+    template<typename T>
     decltype(auto) construct(eld::build_t<T>,
-                             std::tuple<Factories &...> /*emptyTuple*/,
-                             std::true_type /*is_empty*/)
+                             std::tuple<>)
     {
         auto mappedTuple =
             map_tuple<wrapped_predicate<traits::is_named>, wrapped_predicate<same_type, T>>(
                 designatedFactories_);
         return construct(mappedTuple);
+    }
+
+    template<typename DependsOnT, typename NameTag, typename... FactoriesT>
+    decltype(auto) construct(eld::d_name_t<DependsOnT, NameTag>,
+                             std::tuple<FactoriesT &...> tupleFactories)
+    {
+        return construct(tupleFactories);
+    }
+
+    template<typename DependsOnT, typename NameTag>
+    decltype(auto) construct(eld::d_name_t<DependsOnT, NameTag>,
+                             std::tuple<>)
+    {
+        return (*this)(eld::name_t<NameTag>());
     }
 
     template<typename... FoundFactories>
@@ -361,7 +422,7 @@ int main(int, char **)
     eld::named_factory<alias::A> (&create_person)(eld::name_tag<alias::A>()).speak();
     eld::named_factory<alias::B>([]() { return Dog(); })(eld::name_tag<alias::B>()).speak();
     eld::named_factory<alias::C, create_cat, Layer>()(eld::name_tag<alias::C>()).speak();
-    eld::named_factory<alias::C, create_cat, Layer>()(eld::d_name_tt<Layer, alias::C>()).speak();
+    eld::named_factory<alias::C, create_cat, Layer>()(eld::dt_name_t<Layer, alias::C>()).speak();
 
     auto builder =   // TODO: make it work
         eld::make_builder(eld::named_factory<alias::A>(&create_person),
@@ -376,7 +437,7 @@ int main(int, char **)
     builder(eld::name_tag<alias::A>()).speak();
     builder(eld::name_tag<alias::B>()).speak();
     builder(eld::name_tag<alias::C>()).speak();
-    builder(eld::d_name_tt<Layer, alias::C>()).speak();
+    builder(eld::dt_name_t<Layer, alias::C>()).speak();
 
     auto deducedLayer = eld::make_lasanga<Layer>(builder);
     deducedLayer.speak_all();

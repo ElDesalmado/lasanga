@@ -87,8 +87,13 @@ namespace eld
      * @tparam DependentName NameTag or a typename of a class that an object depends on.
      * @tparam NameTag
      */
-    template<typename DependentName, typename NameTag, typename... Modifiers>
+    template<typename DependentName, typename NameTag, typename...>
     struct d_name_t
+    {
+    };
+
+    template<typename DependentName, template<typename...> class NameTagT, typename... Modifiers>
+    struct d_name_tt
     {
     };
 
@@ -101,7 +106,15 @@ namespace eld
      * contexts and GenericClass'es
      */
     template<template<typename...> class GenericClass, typename NameTag, typename... Modifiers>
-    struct d_name_tt
+    struct dt_name_t
+    {
+    };
+
+    template<template<typename...> class GenericClass,
+             template<typename...>
+             class NameTagT,
+             typename... Modifiers>
+    struct dt_name_tt
     {
     };
 
@@ -112,8 +125,14 @@ namespace eld
      * @tparam Modifiers
      * @return
      */
-    template <typename DependentName, typename NameTag, typename ... Modifiers>
-    constexpr d_name_t<DependentName, NameTag, Modifiers...> d_name_tag()
+    template<typename DependentName, typename NameTag, typename...>
+    constexpr d_name_t<DependentName, NameTag> d_name_tag()
+    {
+        return {};
+    }
+
+    template<typename DependentName, template<typename...> class NameTag, typename... Modifiers>
+    constexpr d_name_tt<DependentName, NameTag, Modifiers...> d_name_tag()
     {
         return {};
     }
@@ -126,11 +145,19 @@ namespace eld
      * @return
      */
     template<template<typename...> class GenericClass, typename NameTag, typename... Modifiers>
-    constexpr d_name_tt<GenericClass, NameTag, Modifiers...> d_name_tag()
+    constexpr dt_name_t<GenericClass, NameTag, Modifiers...> d_name_tag()
     {
         return {};
     }
 
+    template<template<typename...> class GenericClass,
+             template<typename...>
+             class NameTag,
+             typename... Modifiers>
+    constexpr dt_name_tt<GenericClass, NameTag, Modifiers...> d_name_tag()
+    {
+        return {};
+    }
 
     /**
      * Build tag. Used to construct an object by its type.
@@ -379,10 +406,7 @@ namespace eld
             {
             }
 
-            decltype(auto) operator()()
-            {
-                return factory_();
-            }
+            decltype(auto) operator()() { return factory_(); }
 
             // TODO: remove other operators?
 
@@ -406,7 +430,7 @@ namespace eld
             template<bool Named = !detail::is_unnamed<name_tag>::value,
                      bool Specified = !traits::is_same_tt<DependsOnT, unnamed_tt>::value,
                      typename std::enable_if_t<Named and Specified, int> * = nullptr>
-            decltype(auto) operator()(eld::d_name_tt<DependsOnT, name_tag>)
+            decltype(auto) operator()(eld::dt_name_t<DependsOnT, name_tag>)
             {
                 return operator()(eld::build_t<type>());
             }

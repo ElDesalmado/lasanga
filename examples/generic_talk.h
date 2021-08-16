@@ -34,7 +34,7 @@ public:
     Crowd(BuilderT &&builder)
       : a_(builder(eld::name_tag<alias::A>())),
         b_(builder(eld::name_tag<alias::B>())),
-        c_(builder(eld::d_name_tt<Crowd, alias::C>())), // this is a dependent name.
+        c_(builder(eld::dt_name_t<Crowd, alias::C>())), // this is a dependent name.
         nt_(builder(eld::build_tag<NonTemplate>()))
     {
     }
