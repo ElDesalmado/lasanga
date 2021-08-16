@@ -126,7 +126,7 @@ int main(int, char **)
     newBuilder(eld::name_tag<alias::A>()).speak();
     newBuilder(eld::build_tag<Dog>()).speak();
     newBuilder(eld::name_tag<alias::B>()).speak();
-    //    newBuilder(eld::d_name_t<alias::C, alias::A>()).speak();
+    newBuilder(eld::d_name_t<alias::C, alias::A>()).speak();   // TODO: fix this. It must be a cat
 
     eld::wrap_factory (&create_person)().speak();
     eld::wrap_factory([]() { return Dog(); })().speak();
