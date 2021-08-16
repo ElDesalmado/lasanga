@@ -259,7 +259,18 @@ public:
         return construct(mappedTuple);
     }
 
-private:
+    /**
+     * Build using template NameTag
+     * @tparam NameTagT
+     * @return
+     */
+    template<template<typename...> class NameTagT>
+    decltype(auto) operator()(eld::name_tt<NameTagT>)
+    {
+        return (*this)(eld::name_t<eld::type_tt<NameTagT>>());
+    }
+
+    private:
     template<typename T, typename... Factories>
     decltype(auto) construct(eld::build_t<T>,
                              std::tuple<Factories &...> tupleFactories,
@@ -340,6 +351,7 @@ int main(int, char **)
     newBuilder(eld::build_tag<Person>()).speak();
     newBuilder(eld::name_tag<alias::A>()).speak();
     newBuilder(eld::build_tag<Dog>()).speak();
+    newBuilder(eld::name_tag<alias::B>()).speak();
 
     eld::wrap_factory (&create_person)(eld::build_tag<Person>()).speak();
     eld::wrap_factory([]() { return Dog(); })(eld::build_tag<Dog>()).speak();
