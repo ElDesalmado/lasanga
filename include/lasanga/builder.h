@@ -379,6 +379,13 @@ namespace eld
             {
             }
 
+            decltype(auto) operator()()
+            {
+                return factory_();
+            }
+
+            // TODO: remove other operators?
+
             decltype(auto) operator()(eld::build_t<type>) { return factory_(); }
 
             template<bool Specified = !traits::is_same_tt<GenericClass, unnamed_tt>::value,

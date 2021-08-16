@@ -186,13 +186,16 @@ constexpr auto map_tuple(TupleT &&tuple)
 namespace traits
 {
     template<typename DFactoryT>
-    using is_unnamed = eld::detail::is_unnamed<DFactoryT>;
+    using is_unnamed = eld::detail::is_unnamed<typename DFactoryT::name_tag>;
 
     template<typename DFactoryT>
     using is_named = std::negation<is_unnamed<DFactoryT>>;
 
     template<typename DFactoryT>
     using name_tag = typename DFactoryT::name_tag;
+
+    template<typename DFactoryT>
+    using type = typename DFactoryT::type;
 
 }   // namespace traits
 
@@ -202,6 +205,9 @@ class builder
 private:
     template<typename FactoryT, typename NameTag>
     using same_name_tag = std::is_same<traits::name_tag<FactoryT>, NameTag>;
+
+    template<typename FactoryT, typename Type>
+    using same_type = std::is_same<traits::type<FactoryT>, Type>;
 
 public:
     template<typename... DFactoriesT>
@@ -236,7 +242,7 @@ public:
     decltype(auto) operator()(eld::build_t<T> buildTag)
     {
         auto mappedTuple =
-            map_tuple<wrapped_predicate<traits::is_unnamed>, wrapped_predicate<std::is_same, T>>(
+            map_tuple<wrapped_predicate<traits::is_unnamed>, wrapped_predicate<same_type, T>>(
                 designatedFactories_);
 
         return construct(buildTag,
@@ -264,11 +270,11 @@ private:
 
     template<typename T, typename... Factories>
     decltype(auto) construct(eld::build_t<T>,
-                             std::tuple<Factories &...> tupleFactories,
+                             std::tuple<Factories &...> /*emptyTuple*/,
                              std::true_type /*is_empty*/)
     {
         auto mappedTuple =
-            map_tuple<wrapped_predicate<traits::is_named>, wrapped_predicate<std::is_same, T>>(
+            map_tuple<wrapped_predicate<traits::is_named>, wrapped_predicate<same_type, T>>(
                 designatedFactories_);
         return construct(mappedTuple);
     }
@@ -292,6 +298,7 @@ private:
 template<typename... DesignatedFactories>
 constexpr auto make_builder(DesignatedFactories &&...factories)
 {
+    // TODO: combine named with unnamed if type is the same?
     return builder<std::decay_t<DesignatedFactories>...>(
         std::forward<DesignatedFactories>(factories)...);
 }
@@ -323,8 +330,16 @@ int main(int, char **)
     auto mappedTuple2 = map_tuple<wrapped_predicate<std::is_integral>>(tuple_input());
     static_assert(std::is_same_v<decltype(mappedTuple2), std::tuple<int &, size_t &>>);
 
-//    auto newBuilder = ::make_builder(eld::wrap_factory(&create_person));
-//    newBuilder(eld::build_t<Person>());   //.speak();
+    auto personUnnamedFactory = eld::wrap_factory(&create_person);
+    static_assert(::traits::is_unnamed<decltype(personUnnamedFactory)>::value);
+
+    auto newBuilder = ::make_builder(eld::wrap_factory(&create_person),
+                                     eld::named_factory<alias::A>(&create_person),
+                                     eld::named_factory<alias::B>([]() { return Dog(); }));
+
+    newBuilder(eld::build_tag<Person>()).speak();
+    newBuilder(eld::name_tag<alias::A>()).speak();
+    newBuilder(eld::build_tag<Dog>()).speak();
 
     eld::wrap_factory (&create_person)(eld::build_tag<Person>()).speak();
     eld::wrap_factory([]() { return Dog(); })(eld::build_tag<Dog>()).speak();
