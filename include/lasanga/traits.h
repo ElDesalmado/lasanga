@@ -24,7 +24,7 @@ namespace eld
     }   // namespace tag
 
     template<typename...>
-    struct unspecified_tt;
+    struct unnamed_tt;
 
     constexpr tag::default_call default_call_tag;
 
@@ -150,7 +150,7 @@ namespace eld
         };
 
         template<>
-        struct is_unspecified<unspecified_tt> : std::true_type
+        struct is_unspecified<unnamed_tt> : std::true_type
         {
         };
 

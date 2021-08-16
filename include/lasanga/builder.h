@@ -302,7 +302,7 @@ namespace eld
         {
         }
 
-        template<typename NameTag, template<typename...> class GenericContextType = unspecified_tt>
+        template<typename NameTag, template<typename...> class GenericContextType = unnamed_tt>
         using type_by_name = typename detail::
             get_type_by_name<NameTag, GenericContextType, DesignatedFactories...>::type;
 
@@ -328,7 +328,7 @@ namespace eld
         };
 
         template<template<typename...> class TNameTag>
-        struct is_unnamed<type_tt<TNameTag>> : traits::is_same_tt<TNameTag, unspecified_tt>
+        struct is_unnamed<type_tt<TNameTag>> : traits::is_same_tt<TNameTag, unnamed_tt>
         {
         };
 
@@ -347,8 +347,8 @@ namespace eld
         template<typename Callable,
                  typename Type,
                  typename NameTag = unnamed,
-                 template<typename...> class DependsOnT = unspecified_tt,
-                 template<typename...> class GenericClass = unspecified_tt>
+                 template<typename...> class DependsOnT = unnamed_tt,
+                 template<typename...> class GenericClass = unnamed_tt>
         class designated_factory
         {
         public:
@@ -381,7 +381,7 @@ namespace eld
 
             decltype(auto) operator()(eld::build_t<type>) { return factory_(); }
 
-            template<bool Specified = !traits::is_same_tt<GenericClass, unspecified_tt>::value,
+            template<bool Specified = !traits::is_same_tt<GenericClass, unnamed_tt>::value,
                      typename std::enable_if_t<Specified, int> * = nullptr>
             decltype(auto) operator()(eld::build_tt<GenericClass>)
             {
@@ -397,7 +397,7 @@ namespace eld
 
             // TODO: generic version for dname_t and dname_tt (?)
             template<bool Named = !detail::is_unnamed<name_tag>::value,
-                     bool Specified = !traits::is_same_tt<DependsOnT, unspecified_tt>::value,
+                     bool Specified = !traits::is_same_tt<DependsOnT, unnamed_tt>::value,
                      typename std::enable_if_t<Named and Specified, int> * = nullptr>
             decltype(auto) operator()(eld::d_name_tt<DependsOnT, name_tag>)
             {
@@ -434,7 +434,7 @@ namespace eld
     }
 
     template<typename NameTag,
-             template<typename...> class DependsOnT = unspecified_tt,
+             template<typename...> class DependsOnT = unnamed_tt,
              typename Callable>
     constexpr auto named_factory(Callable &&callable)
     {
@@ -451,11 +451,11 @@ namespace eld
     }
 
     template<template<typename...> class NameTagT,
-             template<typename...> class DependsOnT = unspecified_tt,
+             template<typename...> class DependsOnT = unnamed_tt,
              typename Callable>
     constexpr auto named_factory(Callable &&callable)
     {
-        static_assert(!traits::is_same_tt<NameTagT, unspecified_tt>::value,
+        static_assert(!traits::is_same_tt<NameTagT, unnamed_tt>::value,
                       "Template NamedTag must not be unspecified.");
 
         return named_factory<type_tt<NameTagT>, DependsOnT, std::decay_t<Callable>>(
@@ -464,7 +464,7 @@ namespace eld
 
     template<typename NameTag,
              typename Callable,
-             template<typename...> class DependsOnT = unspecified_tt>
+             template<typename...> class DependsOnT = unnamed_tt>
     constexpr auto named_factory()
     {
         return named_factory<NameTag, DependsOnT, Callable>(Callable());
@@ -472,14 +472,14 @@ namespace eld
 
     template<template<typename...> class NameTagT,
              typename Callable,
-             template<typename...> class DependsOnT = unspecified_tt>
+             template<typename...> class DependsOnT = unnamed_tt>
     constexpr auto named_factory()
     {
         return named_factory<NameTagT, DependsOnT, Callable>(Callable());
     }
 
     template<typename NameTag,
-             template<typename...> class DependsOnT = unspecified_tt,
+             template<typename...> class DependsOnT = unnamed_tt,
              typename Constructed>
     constexpr auto named_factory(Constructed (*fPtr)())
     {
@@ -487,7 +487,7 @@ namespace eld
     }
 
     template<template<typename...> class NameTagT,
-             template<typename...> class DependsOnT = unspecified_tt,
+             template<typename...> class DependsOnT = unnamed_tt,
              typename Constructed>
     constexpr auto named_factory(Constructed (*fPtr)())
     {

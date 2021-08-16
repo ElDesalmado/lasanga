@@ -92,13 +92,14 @@ namespace detail
     template<typename WrappedPredicateT, typename T>
     struct apply_predicate;
 
-    template<template<typename> class Predicate,
+    template<template<typename...> class Predicate,
              typename T,
-             template<template<typename> class>
+             typename... Modifiers,
+             template<template<typename...> class, typename...>
              class PredicateWrapper>
-    struct apply_predicate<PredicateWrapper<Predicate>, T>
+    struct apply_predicate<PredicateWrapper<Predicate, Modifiers...>, T>
     {
-        constexpr static auto value = Predicate<T>::value;
+        constexpr static auto value = Predicate<T, Modifiers...>::value;
     };
 
     template<typename T, typename... WrappedPredicates>
@@ -172,7 +173,7 @@ namespace detail
 
 }   // namespace detail
 
-template<template<typename> class>
+template<template<typename...> class, typename...>
 struct wrapped_predicate;
 
 template<typename... WrappedPredicates, typename TupleT>
@@ -182,10 +183,33 @@ constexpr auto map_tuple(TupleT &&tuple)
         tuple);
 }
 
+namespace traits
+{
+    template<typename DFactoryT>
+    using is_unnamed = eld::detail::is_unnamed<DFactoryT>;
+
+    template<typename DFactoryT>
+    using is_named = std::negation<is_unnamed<DFactoryT>>;
+
+    template<typename DFactoryT>
+    using name_tag = typename DFactoryT::name_tag;
+
+}   // namespace traits
+
 template<typename... DesignatedFactories>
 class builder
 {
+private:
+    template<typename FactoryT, typename NameTag>
+    using same_name_tag = std::is_same<traits::name_tag<FactoryT>, NameTag>;
+
 public:
+    template<typename... DFactoriesT>
+    constexpr explicit builder(DFactoriesT &&...designatedFactories)
+      : designatedFactories_(std::forward<DFactoriesT>(designatedFactories)...)
+    {
+    }
+
     /**
      * Building:
      * One tag type (build, name, d_name) specialization allows construction of only one type of
@@ -211,17 +235,22 @@ public:
     template<typename T>
     decltype(auto) operator()(eld::build_t<T> buildTag)
     {
-        // TODO: get tuple of unnamed factories
-        auto tuple = std::tuple<>{};
-        return construct(buildTag, tuple, std::is_same<decltype(tuple), std::tuple<>>());
+        auto mappedTuple =
+            map_tuple<wrapped_predicate<traits::is_unnamed>, wrapped_predicate<std::is_same, T>>(
+                designatedFactories_);
+
+        return construct(buildTag,
+                         mappedTuple,
+                         std::is_same<decltype(mappedTuple), std::tuple<>>());
     }
 
     template<typename NameTag>
     decltype(auto) operator()(eld::name_t<NameTag>)
     {
-        // TODO: get tuple of named factories
-        auto tuple = std::tuple<>{};
-        return construct(tuple);
+        auto mappedTuple =
+            map_tuple<wrapped_predicate<traits::is_named>,
+                      wrapped_predicate<same_name_tag, NameTag>>(designatedFactories_);
+        return construct(mappedTuple);
     }
 
 private:
@@ -238,9 +267,10 @@ private:
                              std::tuple<Factories &...> tupleFactories,
                              std::true_type /*is_empty*/)
     {
-        // TODO: find a type T within named factories
-        auto tuple = std::tuple<>{};
-        return construct(tuple);
+        auto mappedTuple =
+            map_tuple<wrapped_predicate<traits::is_named>, wrapped_predicate<std::is_same, T>>(
+                designatedFactories_);
+        return construct(mappedTuple);
     }
 
     template<typename... FoundFactories>
@@ -259,6 +289,13 @@ private:
     std::tuple<DesignatedFactories...> designatedFactories_;
 };
 
+template<typename... DesignatedFactories>
+constexpr auto make_builder(DesignatedFactories &&...factories)
+{
+    return builder<std::decay_t<DesignatedFactories>...>(
+        std::forward<DesignatedFactories>(factories)...);
+}
+
 int main(int, char **)
 {
     namespace detail = eld::detail;
@@ -272,8 +309,12 @@ int main(int, char **)
     using output_sequence = typename ::detail::map_tuple_index_sequence<
         tuple_input,
         ::detail::type_list<wrapped_predicate<std::is_integral>>>::type;
-
     static_assert(std::is_same_v<output_sequence, std::index_sequence<1, 3>>);
+
+    using find_int = typename ::detail::map_tuple_index_sequence<
+        tuple_input,
+        ::detail::type_list<wrapped_predicate<std::is_same, int>>>::type;
+    static_assert(std::is_same_v<find_int, std::index_sequence<1>>);
 
     tuple_input tupleInput{};
     auto mappedTuple = map_tuple<wrapped_predicate<std::is_integral>>(tupleInput);
@@ -281,6 +322,9 @@ int main(int, char **)
 
     auto mappedTuple2 = map_tuple<wrapped_predicate<std::is_integral>>(tuple_input());
     static_assert(std::is_same_v<decltype(mappedTuple2), std::tuple<int &, size_t &>>);
+
+//    auto newBuilder = ::make_builder(eld::wrap_factory(&create_person));
+//    newBuilder(eld::build_t<Person>());   //.speak();
 
     eld::wrap_factory (&create_person)(eld::build_tag<Person>()).speak();
     eld::wrap_factory([]() { return Dog(); })(eld::build_tag<Dog>()).speak();
