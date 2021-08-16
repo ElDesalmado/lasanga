@@ -31,7 +31,7 @@ Person create_person() { return {}; }
 int main(int, char **)
 {
     // create and customize a builder. The order of arguments does not matter
-    auto builder = eld::make_builder(eld::named_factory<alias::C, create_cat, Crowd>(),
+    auto builder = eld::make_builder(eld::d_named_factory<alias::C, Crowd, create_cat>(),
                                      eld::wrap_factory([]() { return NonTemplate(); }),
                                      eld::named_factory<alias::A>(&create_person),
                                      eld::named_factory<alias::B>([]() { return Dog(); }));
@@ -48,7 +48,7 @@ int main(int, char **)
 
     // We can, however, customize our builder and map aliases to different classes
     auto customizedBuilder =
-        eld::make_builder(eld::named_factory<alias::C, create_cat, Crowd>(),
+        eld::make_builder(eld::d_named_factory<alias::C, Crowd, create_cat>(),
                           eld::wrap_factory([]() { return NonTemplate(); }),
                           eld::named_factory<alias::B>(&create_person),
                           eld::named_factory<alias::A>([]() { return Dog(); }));
