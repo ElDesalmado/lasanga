@@ -178,15 +178,15 @@ namespace eld
 
     /**
      * Build tag. Using DependentName to specialize an object to build by NameTag.
-     * @tparam DependentName NameTag or a typename of a class that an object depends on.
-     * @tparam NameTag
+     * @tparam DependsOnT NameTag or a typename of a class that an object depends on.
+     * @tparam NameTagT
      */
-    template<typename DependentName, typename NameTag, typename...>
+    template<typename NameTagT, typename DependsOnT, typename...>
     struct d_name_t
     {
     };
 
-    template<typename DependentName, template<typename...> class NameTagT, typename... Modifiers>
+    template<template<typename...> class TNameTagT, typename DependsOnT, typename... Modifiers>
     struct d_name_tt
     {
     };
@@ -194,19 +194,19 @@ namespace eld
     /**
      * Builder tag. Used to construct an object within a GenericClass by NameTag and a set of
      * Modifiers
-     * @tparam GenericClass Unspecialized template class that owns an object to be constructed.
-     * @tparam NameTag Tag designated a name for a type.
+     * @tparam TDependsOnT Unspecialized template class that owns an object to be constructed.
+     * @tparam NameTagT Tag designated a name for a type.
      * @tparam Modifiers A set of modifiers. Can be used to held in distinguishing between different
-     * contexts and GenericClass'es
+     * contexts and TDependsOnT'es
      */
-    template<template<typename...> class GenericClass, typename NameTag, typename... Modifiers>
+    template<typename NameTagT, template<typename...> class TDependsOnT, typename... Modifiers>
     struct dt_name_t
     {
     };
 
-    template<template<typename...> class GenericClass,
+    template<template<typename...> class TNameTagT,
              template<typename...>
-             class NameTagT,
+             class TDependsOnT,
              typename... Modifiers>
     struct dt_name_tt
     {
@@ -214,41 +214,41 @@ namespace eld
 
     /**
      * Helper function to resolve between typename and template DependentName
-     * @tparam DependentName
+     * @tparam DependsOnT
      * @tparam NameTag
      * @tparam Modifiers
      * @return
      */
-    template<typename DependentName, typename NameTag, typename...>
-    constexpr d_name_t<DependentName, NameTag> d_name_tag()
+    template<typename NameTagT, typename DependsOnT, typename...>
+    constexpr d_name_t<NameTagT, DependsOnT> d_name_tag()
     {
         return {};
     }
 
-    template<typename DependentName, template<typename...> class NameTag, typename... Modifiers>
-    constexpr d_name_tt<DependentName, NameTag, Modifiers...> d_name_tag()
+    template<template<typename...> class TNameTagT, typename DependsOnT, typename... Modifiers>
+    constexpr d_name_tt<TNameTagT, DependsOnT, Modifiers...> d_name_tag()
     {
         return {};
     }
 
     /**
      * Helper function to resolve between typename and template DependentName
-     * @tparam GenericClass
-     * @tparam NameTag
+     * @tparam TDependsOnT
+     * @tparam NameTagT
      * @tparam Modifiers
      * @return
      */
-    template<template<typename...> class GenericClass, typename NameTag, typename... Modifiers>
-    constexpr dt_name_t<GenericClass, NameTag, Modifiers...> d_name_tag()
+    template<typename NameTagT, template<typename...> class TDependsOnT, typename... Modifiers>
+    constexpr dt_name_t<NameTagT, TDependsOnT, Modifiers...> d_name_tag()
     {
         return {};
     }
 
-    template<template<typename...> class GenericClass,
+    template<template<typename...> class TNameTagT,
              template<typename...>
-             class NameTag,
+             class TDependsOnT,
              typename... Modifiers>
-    constexpr dt_name_tt<GenericClass, NameTag, Modifiers...> d_name_tag()
+    constexpr dt_name_tt<TNameTagT, TDependsOnT, Modifiers...> d_name_tag()
     {
         return {};
     }
@@ -488,37 +488,37 @@ namespace eld
             return construct(buildTag, mappedTuple);
         }
 
-        template<typename NameTag>
-        decltype(auto) operator()(eld::name_t<NameTag>)
+        template<typename NameTagT>
+        decltype(auto) operator()(eld::name_t<NameTagT>)
         {
             auto mappedTuple =
                 map_tuple<wrapped_predicate<traits::is_named>,
-                          wrapped_predicate<same_name_tag, NameTag>>(designatedFactories_);
+                          wrapped_predicate<same_name_tag, NameTagT>>(designatedFactories_);
             return construct(mappedTuple);
         }
 
         /**
          * Build using template NameTag
-         * @tparam NameTagT
+         * @tparam TNameTagT
          * @return
          */
-        template<template<typename...> class NameTagT>
-        decltype(auto) operator()(eld::name_tt<NameTagT>)
+        template<template<typename...> class TNameTagT>
+        decltype(auto) operator()(eld::name_tt<TNameTagT>)
         {
-            return (*this)(eld::name_t<eld::type_tt<NameTagT>>());
+            return (*this)(eld::name_t<eld::type_tt<TNameTagT>>());
         }
 
         /**
          * Build using dependent name tag. Will first try to find a designated factory with
          * requested DependsOnT. Will fall back to name_t if not found.
          * @tparam DependsOnT
-         * @tparam NameTag
+         * @tparam NameTagT
          * @tparam ...
          * @param dNameTag
          * @return
          */
-        template<typename DependsOnT, typename NameTag, typename...>
-        decltype(auto) operator()(eld::d_name_t<DependsOnT, NameTag> dNameTag)
+        template<typename NameTagT, typename DependsOnT, typename...>
+        decltype(auto) operator()(eld::d_name_t<NameTagT, DependsOnT> dNameTag)
         {
             auto mappedTuple =
                 map_tuple<wrapped_predicate<traits::is_dependent>,
@@ -527,29 +527,27 @@ namespace eld
             return construct(dNameTag, mappedTuple);
         }
 
-        template<typename DependentName,
-                 template<typename...>
-                 class TNameTagT,
-                 typename... Modifiers>
-        decltype(auto) operator()(eld::d_name_tt<DependentName, TNameTagT, Modifiers...>)
+        template<template<typename...> class TNameTagT, typename DependsOnT, typename... Modifiers>
+        decltype(auto) operator()(eld::d_name_tt<TNameTagT, DependsOnT, Modifiers...>)
         {
-            return (*this)(eld::d_name_t<DependentName, eld::type_tt<TNameTagT>, Modifiers...>());
+            // TODO: this is invalid! (?)
+            return (*this)(eld::d_name_t<eld::type_tt<TNameTagT>, DependsOnT, Modifiers...>());
         }
 
-        template<template<typename...> class TDependsOnT, typename NameTag, typename... Modifiers>
-        decltype(auto) operator()(eld::dt_name_t<TDependsOnT, NameTag, Modifiers...>)
+        template<typename NameTagT, template<typename...> class TDependsOnT, typename... Modifiers>
+        decltype(auto) operator()(eld::dt_name_t<NameTagT, TDependsOnT, Modifiers...>)
         {
-            return (*this)(eld::d_name_t<eld::type_tt<TDependsOnT>, NameTag, Modifiers...>());
+            return (*this)(eld::d_name_t<NameTagT, eld::type_tt<TDependsOnT>, Modifiers...>());
         }
 
-        template<template<typename...> class TDependsOnT,
+        template<template<typename...> class TNameTagT,
                  template<typename...>
-                 class TNameTagT,
+                 class TDependsOnT,
                  typename... Modifiers>
-        decltype(auto) operator()(eld::dt_name_tt<TDependsOnT, TNameTagT, Modifiers...>)
+        decltype(auto) operator()(eld::dt_name_tt<TNameTagT, TDependsOnT, Modifiers...>)
         {
             return (*this)(
-                eld::d_name_t<eld::type_tt<TDependsOnT>, eld::type_tt<TNameTagT>, Modifiers...>());
+                eld::d_name_t<eld::type_tt<TNameTagT>, eld::type_tt<TDependsOnT>, Modifiers...>());
         }
 
         template<typename NameTag>
@@ -581,17 +579,17 @@ namespace eld
             return construct(mappedTuple);
         }
 
-        template<typename DependsOnT, typename NameTag, typename... FactoriesT>
-        decltype(auto) construct(eld::d_name_t<DependsOnT, NameTag>,
+        template<typename NameTagT, typename DependsOnT, typename... FactoriesT>
+        decltype(auto) construct(eld::d_name_t<NameTagT, DependsOnT>,
                                  std::tuple<FactoriesT &...> tupleFactories)
         {
             return construct(tupleFactories);
         }
 
-        template<typename DependsOnT, typename NameTag>
-        decltype(auto) construct(eld::d_name_t<DependsOnT, NameTag>, std::tuple<>)
+        template<typename NameTagT, typename DependsOnT>
+        decltype(auto) construct(eld::d_name_t<NameTagT, DependsOnT>, std::tuple<>)
         {
-            return (*this)(eld::name_t<NameTag>());
+            return (*this)(eld::name_t<NameTagT>());
         }
 
         template<typename... FoundFactories>
@@ -616,207 +614,6 @@ namespace eld
         // TODO: combine named with unnamed if type is the same?
         return builder<std::decay_t<DesignatedFactories>...>(
             std::forward<DesignatedFactories>(factories)...);
-    }
-
-    // TODO: designated factory with multiple callable types?
-    template<typename CallableT,
-             typename ValueTypeT,
-             typename NameTagT = eld::unnamed,
-             typename DependsOnT = eld::unnamed>
-    class designated_factory
-    {
-    public:
-        using value_type = ValueTypeT;
-        using name_tag = NameTagT;
-        using depends_on_type = DependsOnT;
-
-        template<
-            bool DefaultConstructible = std::is_destructible_v<CallableT>,
-            typename... ArgsT,
-            typename std::enable_if_t<sizeof...(ArgsT) || DefaultConstructible, int> * = nullptr>
-        constexpr explicit designated_factory(ArgsT &&...argsT)   //
-          : factory_(std::forward<ArgsT>(argsT)...)
-        {
-        }
-
-        template<bool MoveConstructible = std::is_move_constructible_v<CallableT>,
-                 typename std::enable_if_t<MoveConstructible, int> * = nullptr>
-        explicit designated_factory(designated_factory &&other) noexcept   //
-          : factory_(std::move(other.factory_))
-        {
-        }
-
-        decltype(auto) operator()() { return factory_(); }
-
-    private:
-        CallableT factory_;
-    };
-
-    template<typename Callable>
-    constexpr auto wrap_factory(Callable &&callable)
-    {
-        using callable_type = std::decay_t<Callable>;
-        using constructed_type = decltype(std::declval<callable_type>()());
-        static_assert(!traits::is_tuple<constructed_type>(),
-                      "Factories that construct tuples are not allowed. Use special overload and "
-                      "explicitly specify constructed type");
-        return eld::designated_factory<std::decay_t<Callable>, constructed_type>(
-            std::forward<Callable>(callable));
-    }
-
-    template<typename Callable>
-    constexpr auto wrap_factory()
-    {
-        return wrap_factory<Callable>(Callable());
-    }
-
-    template<typename Constructed>
-    constexpr auto wrap_factory(Constructed (*fPtr)())
-    {
-        return wrap_factory<std::decay_t<decltype(fPtr)>>(std::move(fPtr));
-    }
-
-    template<typename NameTag, typename Callable>
-    constexpr auto named_factory(Callable &&callable)
-    {
-        static_assert(!std::is_same_v<NameTag, unnamed>, "NamedTag must not be unnamed.");
-
-        using callable_type = std::decay_t<Callable>;
-        using constructed_type = decltype(std::declval<callable_type>()());
-        static_assert(!traits::is_tuple<constructed_type>(),
-                      "Factories that construct tuples are not allowed. Use special overload and "
-                      "explicitly specify constructed type");
-        return eld::designated_factory<std::decay_t<Callable>, constructed_type, NameTag>(
-            std::forward<Callable>(callable));
-    }
-
-    template<typename NameTag, typename Callable>
-    constexpr auto named_factory()
-    {
-        return named_factory<NameTag>(Callable());
-    }
-
-    template<template<typename...> class NameTagT, typename Callable>
-    constexpr auto named_factory(Callable &&callable)
-    {
-        static_assert(!traits::is_same_tt<NameTagT, unnamed_tt>::value,
-                      "Template NamedTag must not be unspecified.");
-
-        return named_factory<type_tt<NameTagT>, std::decay_t<Callable>>(
-            std::forward<Callable>(callable));
-    }
-
-    template<template<typename...> class NameTagT, typename Callable>
-    constexpr auto named_factory()
-    {
-        return named_factory<NameTagT>(Callable());
-    }
-
-    template<typename NameTag, typename Constructed>
-    constexpr auto named_factory(Constructed (*fPtr)())
-    {
-        return named_factory<NameTag, std::decay_t<decltype(fPtr)>>(std::move(fPtr));
-    }
-
-    template<template<typename...> class NameTagT, typename Constructed>
-    constexpr auto named_factory(Constructed (*fPtr)())
-    {
-        return named_factory<NameTagT, std::decay_t<decltype(fPtr)>>(std::move(fPtr));
-    }
-
-    template<typename NameTagT, typename DependsOnT, typename Callable>
-    constexpr auto d_named_factory(Callable &&callable)
-    {
-        static_assert(!std::is_same_v<NameTagT, unnamed>, "NamedTag must not be unnamed.");
-        // TODO: check DependOnT is valid
-
-        using callable_type = std::decay_t<Callable>;
-        using constructed_type = decltype(std::declval<callable_type>()());
-        static_assert(!traits::is_tuple<constructed_type>(),
-                      "Factories that construct tuples are not allowed. Use special overload and "
-                      "explicitly specify constructed type");
-        return eld::designated_factory<callable_type, constructed_type, NameTagT, DependsOnT>(
-            std::forward<Callable>(callable));
-    }
-
-    template<typename NameTagT, typename DependsOnT, typename Callable>
-    constexpr auto d_named_factory()
-    {
-        return d_named_factory<NameTagT, DependsOnT>(Callable());
-    }
-
-    template<typename NameTagT, typename DependsOnT, typename ConstructedT>
-    constexpr auto d_named_factory(ConstructedT (*pFunction)())
-    {
-        return d_named_factory<NameTagT, DependsOnT, std::decay_t<decltype(pFunction)>>(
-            std::move(pFunction));
-    }
-
-    template<template<typename...> class TNameTagT, typename DependsOnT, typename Callable>
-    constexpr auto d_named_factory(Callable &&callable)
-    {
-        return d_named_factory<type_tt<TNameTagT>, DependsOnT>(std::forward<Callable>(callable));
-    }
-
-    template<template<typename...> class TNameTagT, typename DependsOnT, typename Callable>
-    constexpr auto d_named_factory()
-    {
-        return d_named_factory<TNameTagT, DependsOnT>(Callable());
-    }
-
-    template<template<typename...> class TNameTagT, typename DependsOnT, typename ConstructedT>
-    constexpr auto d_named_factory(ConstructedT (*pFunction)())
-    {
-        return d_named_factory<TNameTagT, DependsOnT, std::decay_t<decltype(pFunction)>>(
-            std::move(pFunction));
-    }
-
-    template<typename NameTagT, template<typename...> class TDependsOnT, typename Callable>
-    constexpr auto d_named_factory(Callable &&callable)
-    {
-        return d_named_factory<NameTagT, type_tt<TDependsOnT>>(std::forward<Callable>(callable));
-    }
-
-    template<typename NameTagT, template<typename...> class TDependsOnT, typename Callable>
-    constexpr auto d_named_factory()
-    {
-        return d_named_factory<NameTagT, TDependsOnT>(Callable());
-    }
-
-    template<typename NameTagT, template<typename...> class TDependsOnT, typename ConstructedT>
-    constexpr auto d_named_factory(ConstructedT (*pFunction)())
-    {
-        return d_named_factory<NameTagT, TDependsOnT, std::decay_t<decltype(pFunction)>>(
-            std::move(pFunction));
-    }
-
-    template<template<typename...> class TNameTagT,
-             template<typename...>
-             class TDependsOnT,
-             typename Callable>
-    constexpr auto d_named_factory(Callable &&callable)
-    {
-        return d_named_factory<type_tt<TNameTagT>, type_tt<TDependsOnT>>(
-            std::forward<Callable>(callable));
-    }
-
-    template<template<typename...> class TNameTagT,
-             template<typename...>
-             class TDependsOnT,
-             typename Callable>
-    constexpr auto d_named_factory()
-    {
-        return d_named_factory<TNameTagT, TDependsOnT>(Callable());
-    }
-
-    template<template<typename...> class TNameTagT,
-             template<typename...>
-             class TDependsOnT,
-             typename ConstructedT>
-    constexpr auto d_named_factory(ConstructedT (*pFunction)())
-    {
-        return d_named_factory<TNameTagT, TDependsOnT, std::decay_t<decltype(pFunction)>>(
-            std::move(pFunction));
     }
 
 }   // namespace eld

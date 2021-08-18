@@ -1,5 +1,6 @@
 ﻿
 #include "lasanga/builder.h"
+#include "lasanga/designated_factory.h"
 
 #include <type_traits>
 #include <utility>
@@ -35,7 +36,7 @@ public:
     Layer(BuilderT &&builder)
       : a_(builder(eld::name_tag<alias::A>())),
         b_(builder(eld::name_tag<alias::B>())),
-        c_(builder(eld::dt_name_t<Layer, alias::C>())),
+        c_(builder(eld::d_name_tag<alias::C, ::Layer>())),
         nt_(builder(eld::build_tag<NonTemplate>()))
     {
     }
@@ -126,7 +127,7 @@ int main(int, char **)
     newBuilder(eld::name_tag<alias::A>()).speak();
     newBuilder(eld::build_tag<Dog>()).speak();
     newBuilder(eld::name_tag<alias::B>()).speak();
-    newBuilder(eld::d_name_t<alias::C, alias::A>()).speak();   // TODO: fix this. It must be a cat
+    newBuilder(eld::d_name_t<alias::A, alias::C>()).speak();   // TODO: fix this. It must be a cat
 
     eld::wrap_factory (&create_person)().speak();
     eld::wrap_factory([]() { return Dog(); })().speak();
@@ -135,13 +136,13 @@ int main(int, char **)
     // named
     eld::named_factory<alias::A> (&create_person)().speak();
     eld::named_factory<alias::B>([]() { return Dog(); })().speak();
-    eld::d_named_factory<alias::A, alias::C>([]() { return Cat(); })().speak();
-    eld::d_named_factory<alias::A, alias::C, create_cat>()().speak();
-    eld::d_named_factory<alias::A, alias::C> (&create_person)().speak();
+    eld::d_named_factory<alias::C, alias::A>([]() { return Cat(); })().speak();
+    eld::d_named_factory<alias::C, alias::A, create_cat>()().speak();
+    eld::d_named_factory<alias::C, alias::A> (&create_person)().speak();
 
-    eld::d_named_factory<alias::B, alias::C>([]() { return Dog(); })().speak();
-    eld::d_named_factory<alias::B, alias::C, create_cat>()().speak();
-    eld::d_named_factory<alias::B, alias::C> (&create_person)().speak();
+    eld::d_named_factory<alias::C, alias::B>([]() { return Dog(); })().speak();
+    eld::d_named_factory<alias::C, alias::B, create_cat>()().speak();
+    eld::d_named_factory<alias::C, alias::B> (&create_person)().speak();
 
     eld::d_named_factory<alias::B, alias::B>([]() { return Dog(); })().speak();
     eld::d_named_factory<alias::B, alias::B, create_cat>()().speak();
@@ -162,7 +163,7 @@ int main(int, char **)
     builder(eld::name_tag<alias::A>()).speak();
     builder(eld::name_tag<alias::B>()).speak();
     builder(eld::name_tag<alias::C>()).speak();
-    builder(eld::dt_name_t<Layer, alias::C>()).speak();
+    builder(eld::d_name_tag<alias::C, Layer>()).speak();
 
     auto deducedLayer = eld::make_lasanga<Layer>(builder);
     deducedLayer.speak_all();
