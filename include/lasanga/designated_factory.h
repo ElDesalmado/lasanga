@@ -1,12 +1,14 @@
 ﻿#pragma once
 
+#include "lasanga/traits.h"
+
 namespace eld
 {
     // TODO: designated factory with multiple callable types?
     template<typename CallableT,
              typename ValueTypeT,
-             typename NameTagT = eld::unnamed,
-             typename DependsOnT = eld::unnamed>
+             typename NameTagT = eld::tag::unnamed,
+             typename DependsOnT = eld::tag::unnamed>
     class designated_factory
     {
     public:
@@ -63,7 +65,7 @@ namespace eld
     template<typename NameTag, typename Callable>
     constexpr auto named_factory(Callable &&callable)
     {
-        static_assert(!std::is_same_v<NameTag, unnamed>, "NamedTag must not be unnamed.");
+        static_assert(!std::is_same_v<NameTag, tag::unnamed>, "NamedTag must not be unnamed.");
 
         using callable_type = std::decay_t<Callable>;
         using constructed_type = decltype(std::declval<callable_type>()());
@@ -83,7 +85,7 @@ namespace eld
     template<template<typename...> class NameTagT, typename Callable>
     constexpr auto named_factory(Callable &&callable)
     {
-        static_assert(!traits::is_same_tt<NameTagT, unnamed_tt>::value,
+        static_assert(!traits::is_same_tt<NameTagT, tag::unnamed_t>::value,
                       "Template NamedTag must not be unspecified.");
 
         return named_factory<type_tt<NameTagT>, std::decay_t<Callable>>(
@@ -111,7 +113,7 @@ namespace eld
     template<typename NameTagT, typename DependsOnT, typename Callable>
     constexpr auto d_named_factory(Callable &&callable)
     {
-        static_assert(!std::is_same_v<NameTagT, unnamed>, "NamedTag must not be unnamed.");
+        static_assert(!std::is_same_v<NameTagT, tag::unnamed>, "NamedTag must not be unnamed.");
         // TODO: check DependOnT is valid
 
         using callable_type = std::decay_t<Callable>;

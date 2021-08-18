@@ -23,7 +23,7 @@ namespace eld
         template<size_t Indx, template<typename...> class TTypeListT>
         struct element_type<Indx, TTypeListT<>>
         {
-            using type = not_found_t;
+            using type = tag::not_found;
         };
 
     }   // namespace traits
@@ -253,12 +253,12 @@ namespace eld
     namespace detail
     {
         template<typename NameTag>
-        struct is_unnamed : std::is_same<NameTag, unnamed>
+        struct is_unnamed : std::is_same<NameTag, tag::unnamed>
         {
         };
 
         template<template<typename...> class TNameTag>
-        struct is_unnamed<type_tt<TNameTag>> : traits::is_same_tt<TNameTag, unnamed_tt>
+        struct is_unnamed<type_tt<TNameTag>> : traits::is_same_tt<TNameTag, tag::unnamed_t>
         {
         };
     }   // namespace detail
@@ -304,7 +304,7 @@ namespace eld
         template<typename NameTag, typename... DesignatedFactories>
         struct get_type_by_name
         {
-            static_assert(!std::is_same_v<NameTag, unnamed>, "NameTag must not be unnamed");
+            static_assert(!std::is_same_v<NameTag, tag::unnamed>, "NameTag must not be unnamed");
             using list = typename map_factories<NameTag, DesignatedFactories...>::type;
 
             static_assert(util::type_list_size<list>::value <= 1, "Several NameTags found!");
@@ -352,8 +352,8 @@ namespace eld
         decltype(auto) operator()(eld::build_t<T> buildTag)
         {
             auto mappedTuple =
-                util::map_tuple<util::wrapped_predicate<traits::is_unnamed>, util::wrapped_predicate<same_type, T>>(
-                    designatedFactories_);
+                util::map_tuple<util::wrapped_predicate<traits::is_unnamed>,
+                                util::wrapped_predicate<same_type, T>>(designatedFactories_);
 
             return construct(buildTag, mappedTuple);
         }
@@ -361,9 +361,9 @@ namespace eld
         template<typename NameTagT>
         decltype(auto) operator()(eld::name_t<NameTagT>)
         {
-            auto mappedTuple =
-                util::map_tuple<util::wrapped_predicate<traits::is_named>,
-                          util::wrapped_predicate<same_name_tag, NameTagT>>(designatedFactories_);
+            auto mappedTuple = util::map_tuple<util::wrapped_predicate<traits::is_named>,
+                                               util::wrapped_predicate<same_name_tag, NameTagT>>(
+                designatedFactories_);
             return construct(mappedTuple);
         }
 
@@ -392,7 +392,8 @@ namespace eld
         {
             auto mappedTuple =
                 util::map_tuple<util::wrapped_predicate<traits::is_dependent>,
-                          util::wrapped_predicate<same_depends_on, DependsOnT>>(designatedFactories_);
+                                util::wrapped_predicate<same_depends_on, DependsOnT>>(
+                    designatedFactories_);
 
             return construct(dNameTag, mappedTuple);
         }
@@ -444,8 +445,8 @@ namespace eld
         decltype(auto) construct(eld::build_t<T>, std::tuple<>)
         {
             auto mappedTuple =
-                util::map_tuple<util::wrapped_predicate<traits::is_named>, util::wrapped_predicate<same_type, T>>(
-                    designatedFactories_);
+                util::map_tuple<util::wrapped_predicate<traits::is_named>,
+                                util::wrapped_predicate<same_type, T>>(designatedFactories_);
             return construct(mappedTuple);
         }
 

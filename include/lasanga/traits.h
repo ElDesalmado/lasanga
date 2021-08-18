@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "lasanga/utility.h"
+
 #include <cstddef>
 #include <tuple>
 #include <type_traits>
@@ -12,6 +14,10 @@ namespace eld
         // placeholder for template template tag
         struct any;
 
+        struct not_found
+        {
+        };
+
         template<typename...>
         struct build
         {
@@ -21,18 +27,15 @@ namespace eld
         {
         };
 
+        struct unnamed;
+
+        template<typename...>
+        struct unnamed_t;
+
     }   // namespace tag
 
-    template<typename...>
-    struct unnamed_tt;
-
+    constexpr inline tag::not_found not_found;
     constexpr tag::default_call default_call_tag;
-
-    struct unnamed;
-    struct not_found_t;
-
-    template<typename Name, typename T, typename...>
-    struct descriptor_t;
 
     namespace traits
     {
@@ -70,36 +73,6 @@ namespace eld
         {
         };
 
-        template<typename>
-        struct is_composition : std::false_type
-        {
-        };
-
-        template<typename... T>
-        struct is_composition<std::tuple<T...>> : std::true_type
-        {
-        };
-
-        template<typename... T>
-        struct is_composition<std::tuple<const T...>> : std::true_type
-        {
-        };
-
-        template<typename>
-        struct is_aggregation : std::false_type
-        {
-        };
-
-        template<typename... T>
-        struct is_aggregation<std::tuple<T &...>> : std::true_type
-        {
-        };
-
-        template<typename... T>
-        struct is_aggregation<std::tuple<const T &...>> : std::true_type
-        {
-        };
-
         template<typename T>
         struct get_type
         {
@@ -115,7 +88,7 @@ namespace eld
         template<typename T>
         struct get_name
         {
-            using type = eld::unnamed;
+            using type = eld::tag::unnamed;
         };
 
         template<template<typename...> class Tag, typename Name, typename T, typename... U>
@@ -150,13 +123,11 @@ namespace eld
         };
 
         template<>
-        struct is_unspecified<unnamed_tt> : std::true_type
+        struct is_unspecified<tag::unnamed_t> : std::true_type
         {
         };
 
     }   // namespace traits
-
-    struct not_found;
 
     template<typename T>
     struct value_type
@@ -165,7 +136,7 @@ namespace eld
     };
 
     template<typename>
-    struct map_key_type : value_type<not_found>
+    struct map_key_type : value_type<tag::not_found>
     {
     };
 

@@ -112,10 +112,12 @@ int main(int, char **)
     static_assert(std::is_same_v<find_int, std::index_sequence<1>>);
 
     tuple_input tupleInput{};
-    auto mappedTuple = eld::util::map_tuple<eld::util::wrapped_predicate<std::is_integral>>(tupleInput);
+    auto mappedTuple =
+        eld::util::map_tuple<eld::util::wrapped_predicate<std::is_integral>>(tupleInput);
     static_assert(std::is_same_v<decltype(mappedTuple), std::tuple<int &, size_t &>>);
 
-    auto mappedTuple2 = eld::util::map_tuple<eld::util::wrapped_predicate<std::is_integral>>(tuple_input());
+    auto mappedTuple2 =
+        eld::util::map_tuple<eld::util::wrapped_predicate<std::is_integral>>(tuple_input());
     static_assert(std::is_same_v<decltype(mappedTuple2), std::tuple<int &, size_t &>>);
 
     auto personUnnamedFactory = eld::wrap_factory(&create_person);

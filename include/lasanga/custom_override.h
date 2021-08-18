@@ -78,7 +78,7 @@ namespace eld
         constexpr decltype(auto) get_tuple_element(T &&tuple, std::true_type /*is_tuple*/)
         {
             using found_type = eld::find_type<NameTag>;
-            static_assert(!std::is_same_v<found_type, not_found>,
+            static_assert(!std::is_same_v<found_type, tag::not_found>,
                           "NameTag does not have a type assigned to it");
 
             return std::get<found_type>(tuple);
@@ -108,7 +108,7 @@ namespace eld
         constexpr decltype(auto) get_element_if_tuple(T &&tuple, std::true_type /*is_tuple<T>*/)
         {
             using found_type = find_type<NameTag>;
-            static_assert(!std::is_same_v<found_type, not_found>,
+            static_assert(!std::is_same_v<found_type, tag::not_found>,
                           "NameTag does not have a type assigned to it");
 
             return std::get<found_type>(tuple);
