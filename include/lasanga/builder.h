@@ -204,7 +204,9 @@ namespace eld
         template<typename BuilderT, template<typename...> class TTypeListT, typename... NameTags>
         struct get_type_list<BuilderT, TTypeListT<NameTags...>>
         {
-            using type = TTypeListT<typename BuilderT::template type_by_name<NameTags>...>;
+            // TODO: implement
+//            using type = TTypeListT<typename BuilderT::template type_by_name<NameTags>...>;
+            using type = util::type_list<>;
         };
     }   // namespace traits
 
@@ -231,7 +233,10 @@ namespace eld
         static_assert(traits::is_complete<GetNameList<GenericClass, Modifiers...>>::value,
                       "Name list has not been defined for GenericClass");
 
+        // TODO: deduce name list from unspecialized GenericClass
         using name_list = typename GetNameList<GenericClass, Modifiers...>::type;
+
+        // TODO: get type list
         using type_list_t = typename traits::get_type_list<std::decay_t<BuilderT>, name_list>::type;
 
         return typename detail::specialize_t<GenericClass, type_list_t>::type(builder);
@@ -289,28 +294,28 @@ namespace eld
     namespace detail
     {
         // TODO: add usage of GenericContextType to implementation
-        template<typename NameTag, typename... DesignatedFactories>
-        struct map_factories
-        {
-            using type = typename util::convert_type_list<
-                decltype(std::tuple_cat(
-                    std::declval<std::conditional_t<
-                        std::is_same_v<NameTag, typename DesignatedFactories::name_tag>,
-                        std::tuple<DesignatedFactories>,
-                        std::tuple<>>>()...)),
-                util::type_list>::type;
-        };
-
-        template<typename NameTag, typename... DesignatedFactories>
-        struct get_type_by_name
-        {
-            static_assert(!std::is_same_v<NameTag, tag::unnamed>, "NameTag must not be unnamed");
-            using list = typename map_factories<NameTag, DesignatedFactories...>::type;
-
-            static_assert(util::type_list_size<list>::value <= 1, "Several NameTags found!");
-
-            using type = typename traits::element_type<0, list>::type::value_type;
-        };
+//        template<typename NameTag, typename... DesignatedFactories>
+//        struct map_factories
+//        {
+//            using type = typename util::convert_type_list<
+//                decltype(std::tuple_cat(
+//                    std::declval<std::conditional_t<
+//                        std::is_same_v<NameTag, typename DesignatedFactories::name_tag>,
+//                        std::tuple<DesignatedFactories>,
+//                        std::tuple<>>>()...)),
+//                util::type_list>::type;
+//        };
+//
+//        template<typename NameTag, typename... DesignatedFactories>
+//        struct get_type_by_name
+//        {
+//            static_assert(!std::is_same_v<NameTag, tag::unnamed>, "NameTag must not be unnamed");
+//            using list = typename map_factories<NameTag, DesignatedFactories...>::type;
+//
+//            static_assert(util::type_list_size<list>::value <= 1, "Several NameTags found!");
+//
+//            using type = typename traits::element_type<0, list>::type::value_type;
+//        };
 
         // implement search by NameTag
     }   // namespace detail
@@ -334,6 +339,8 @@ namespace eld
     class builder
     {
     public:
+        using list_factories_type = util::type_list<DesignatedFactories...>;
+
         template<typename... DFactoriesT>
         constexpr explicit builder(DFactoriesT &&...designatedFactories)
           : designatedFactories_(std::forward<DFactoriesT>(designatedFactories)...)
@@ -420,10 +427,6 @@ namespace eld
             return (*this)(
                 eld::d_name_t<eld::type_tt<TNameTagT>, eld::type_tt<TDependsOnT>, Modifiers...>());
         }
-
-        template<typename NameTag>
-        using type_by_name =
-            typename detail::get_type_by_name<NameTag, DesignatedFactories...>::type;
 
     private:
         template<typename FactoryT, typename NameTag>

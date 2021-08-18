@@ -101,23 +101,39 @@ namespace eld
             }
         };
 
+        template<template<typename...> class TGenericClassT, typename TypeList, typename = void>
+        struct can_specialize : std::false_type
+        {
+        };
+
+        template<template<typename...> class TGenericClassT,
+                 template<typename...>
+                 class TTypeListT,
+                 typename... TypesT>
+        struct can_specialize<TGenericClassT,
+                              TTypeListT<TypesT...>,
+                              std::void_t<TGenericClassT<TypesT...>>> : std::true_type
+        {
+        };
+
         template<template<typename...> class /*GenericClass*/, typename /*TypeList*/>
         struct specialize_t;
 
         /**
          * Specialize an unspecialized class template GenericClass using a type_list of Types
-         * @tparam GenericClass
+         * @tparam TGenericClassT
          * @tparam Types Types to be used for specialization.
          * \todo: support template tree types?
          */
-        template<template<typename...> class GenericClass,
+        template<template<typename...> class TGenericClassT,
                  template<typename...>
                  class TTypeListT,
                  typename... Types>
-        struct specialize_t<GenericClass, TTypeListT<Types...>>
+        struct specialize_t<TGenericClassT, TTypeListT<Types...>>
         {
-            // TODO: understandable compile time error
-            using type = GenericClass<Types...>;
+            static_assert(can_specialize<TGenericClassT,  TTypeListT<Types...>>::value,
+                          "Can not specialize TGenericClassT from a given Type List");
+            using type = TGenericClassT<Types...>;
         };
     }   // namespace detail
 
