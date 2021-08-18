@@ -56,4 +56,7 @@ if (NOT IS_EXCLUDED AND BUILD_EXAMPLES)
 
     add_executable(sb.builder sb_builder.cpp)
     target_link_libraries(sb.builder lasanga)
+
+    add_executable(sb.iteration sb_iteration.cpp)
+    target_link_libraries(sb.iteration lasanga)
 endif()
