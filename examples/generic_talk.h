@@ -59,5 +59,5 @@ private:
 template<>
 struct eld::get_name_list<Crowd>
 {
-    using type = type_list<alias::A, type_tt<alias::B>, alias::C>;
+    using type = util::type_list<alias::A, type_tt<alias::B>, alias::C>;
 };

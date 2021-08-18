@@ -1,132 +1,27 @@
 ﻿#pragma once
 
 #include "lasanga/traits.h"
+#include "lasanga/utility.h"
 
 #include <type_traits>
 #include <utility>
 
 namespace eld
 {
-    template<typename...>
-    struct type_list;
-
-    namespace detail
-    {
-        template<typename WrappedPredicateT, typename T>
-        struct apply_predicate;
-
-        template<template<typename...> class Predicate,
-                 typename T,
-                 typename... Modifiers,
-                 template<template<typename...> class, typename...>
-                 class PredicateWrapper>
-        struct apply_predicate<PredicateWrapper<Predicate, Modifiers...>, T>
-        {
-            constexpr static auto value = Predicate<T, Modifiers...>::value;
-        };
-
-        template<typename T, typename... WrappedPredicates>
-        struct apply_predicates
-        {
-            constexpr static auto value =
-                std::conjunction_v<apply_predicate<WrappedPredicates, T>...>;
-        };
-
-        template<typename TupleT,
-                 typename ListWrappedPredicatesT,
-                 typename = decltype(std::make_index_sequence<std::tuple_size_v<TupleT>>())>
-        struct map_tuple_index_sequence;
-
-        template<template<typename...> class TupleT,
-                 typename... Types,
-                 template<typename...>
-                 class TypeListT,
-                 typename... WrappedPredicatesT,
-                 size_t... Indx>
-        struct map_tuple_index_sequence<TupleT<Types...>,
-                                        TypeListT<WrappedPredicatesT...>,
-                                        std::index_sequence<Indx...>>
-        {
-        private:
-            using tuple_input = TupleT<Types...>;
-
-            using tuple_indices = decltype(std::tuple_cat(
-                std::conditional_t<apply_predicates<Types, WrappedPredicatesT...>::value,
-                                   std::tuple<std::integral_constant<size_t, Indx>>,
-                                   std::tuple<>>()...));
-
-            template<typename TupleI>
-            struct sequence_from_tuple;
-
-            template<template<typename...> class TupleIC, size_t... IC>
-            struct sequence_from_tuple<TupleIC<std::integral_constant<size_t, IC>...>>
-            {
-                using type = std::index_sequence<IC...>;
-            };
-
-        public:
-            using type = typename sequence_from_tuple<tuple_indices>::type;
-        };
-
-        template<typename TupleT,
-                 typename ListWrappedPredicatesT,
-                 typename = typename map_tuple_index_sequence<TupleT, ListWrappedPredicatesT>::type>
-        struct map_tuple;
-
-        template<template<typename...> class TupleT,
-                 typename... T,
-                 typename ListWrappedPredicatesT,
-                 size_t... Indx>
-        struct map_tuple<TupleT<T...>, ListWrappedPredicatesT, std::index_sequence<Indx...>>
-        {
-            constexpr auto operator()(TupleT<T...> &tuple)
-            {
-                return TupleT<std::tuple_element_t<Indx, std::decay_t<decltype(tuple)>> &...>(
-                    std::get<Indx>(tuple)...);
-            }
-
-            constexpr auto operator()(const TupleT<T...> &tuple)
-            {
-                return TupleT<std::tuple_element_t<Indx, std::decay_t<decltype(tuple)>> &...>(
-                    std::get<Indx>(tuple)...);
-            }
-        };
-
-    }   // namespace detail
-
-    template<template<typename...> class, typename...>
-    struct wrapped_predicate;
-
-    template<typename... WrappedPredicates, typename TupleT>
-    constexpr auto map_tuple(TupleT &&tuple)
-    {
-        return detail::map_tuple<std::decay_t<TupleT>, eld::type_list<WrappedPredicates...>>{}(
-            tuple);
-    }
-
     namespace traits
     {
-        template<typename>
-        struct type_list_size;
-
-        template<typename... Types>
-        struct type_list_size<type_list<Types...>>
-        {
-            constexpr static size_t value = sizeof...(Types);
-        };
-
         template<size_t, typename>
         struct element_type;
 
-        template<size_t Indx, typename... Types>
-        struct element_type<Indx, type_list<Types...>>
+        template<size_t Indx, template<typename...> class TTypeListT, typename... Types>
+        struct element_type<Indx, TTypeListT<Types...>>
         {
             using type = std::tuple_element_t<Indx, std::tuple<Types...>>;
         };
 
         // TODO: Should I allow this?
-        template<size_t Indx>
-        struct element_type<Indx, type_list<>>
+        template<size_t Indx, template<typename...> class TTypeListT>
+        struct element_type<Indx, TTypeListT<>>
         {
             using type = not_found_t;
         };
@@ -306,30 +201,12 @@ namespace eld
         template<typename /*BuilderT*/, typename /*NameList*/>
         struct get_type_list;
 
-        template<typename BuilderT, typename... NameTags>
-        struct get_type_list<BuilderT, type_list<NameTags...>>
+        template<typename BuilderT, template<typename...> class TTypeListT, typename... NameTags>
+        struct get_type_list<BuilderT, TTypeListT<NameTags...>>
         {
-            using type = type_list<typename BuilderT::template type_by_name<NameTags>...>;
+            using type = TTypeListT<typename BuilderT::template type_by_name<NameTags>...>;
         };
     }   // namespace traits
-
-    namespace detail
-    {
-        template<template<typename...> class /*GenericClass*/, typename /*TypeList*/>
-        struct specialize_t;
-
-        /**
-         * Specialize an unspecialized class template GenericClass using a type_list of Types
-         * @tparam GenericClass
-         * @tparam Types Types to be used for specialization.
-         * \todo: support template tree types?
-         */
-        template<template<typename...> class GenericClass, typename... Types>
-        struct specialize_t<GenericClass, type_list<Types...>>
-        {
-            using type = GenericClass<Types...>;
-        };
-    }   // namespace detail
 
     /**
      * Create an object of a fully specialized class template GenericClass with specialization types
@@ -411,24 +288,17 @@ namespace eld
     // TODO: remove/refactor this
     namespace detail
     {
-        template<typename Tuple>
-        struct type_list_from_tuple;
-
-        template<typename... Types>
-        struct type_list_from_tuple<std::tuple<Types...>>
-        {
-            using type = type_list<std::decay_t<Types>...>;
-        };
-
         // TODO: add usage of GenericContextType to implementation
         template<typename NameTag, typename... DesignatedFactories>
         struct map_factories
         {
-            using type = typename type_list_from_tuple<decltype(std::tuple_cat(
-                std::declval<std::conditional_t<
-                    std::is_same_v<NameTag, typename DesignatedFactories::name_tag>,
-                    std::tuple<DesignatedFactories>,
-                    std::tuple<>>>()...))>::type;
+            using type = typename util::convert_type_list<
+                decltype(std::tuple_cat(
+                    std::declval<std::conditional_t<
+                        std::is_same_v<NameTag, typename DesignatedFactories::name_tag>,
+                        std::tuple<DesignatedFactories>,
+                        std::tuple<>>>()...)),
+                util::type_list>::type;
         };
 
         template<typename NameTag, typename... DesignatedFactories>
@@ -437,7 +307,7 @@ namespace eld
             static_assert(!std::is_same_v<NameTag, unnamed>, "NameTag must not be unnamed");
             using list = typename map_factories<NameTag, DesignatedFactories...>::type;
 
-            static_assert(traits::type_list_size<list>::value <= 1, "Several NameTags found!");
+            static_assert(util::type_list_size<list>::value <= 1, "Several NameTags found!");
 
             using type = typename traits::element_type<0, list>::type::value_type;
         };
@@ -482,7 +352,7 @@ namespace eld
         decltype(auto) operator()(eld::build_t<T> buildTag)
         {
             auto mappedTuple =
-                map_tuple<wrapped_predicate<traits::is_unnamed>, wrapped_predicate<same_type, T>>(
+                util::map_tuple<util::wrapped_predicate<traits::is_unnamed>, util::wrapped_predicate<same_type, T>>(
                     designatedFactories_);
 
             return construct(buildTag, mappedTuple);
@@ -492,8 +362,8 @@ namespace eld
         decltype(auto) operator()(eld::name_t<NameTagT>)
         {
             auto mappedTuple =
-                map_tuple<wrapped_predicate<traits::is_named>,
-                          wrapped_predicate<same_name_tag, NameTagT>>(designatedFactories_);
+                util::map_tuple<util::wrapped_predicate<traits::is_named>,
+                          util::wrapped_predicate<same_name_tag, NameTagT>>(designatedFactories_);
             return construct(mappedTuple);
         }
 
@@ -521,8 +391,8 @@ namespace eld
         decltype(auto) operator()(eld::d_name_t<NameTagT, DependsOnT> dNameTag)
         {
             auto mappedTuple =
-                map_tuple<wrapped_predicate<traits::is_dependent>,
-                          wrapped_predicate<same_depends_on, DependsOnT>>(designatedFactories_);
+                util::map_tuple<util::wrapped_predicate<traits::is_dependent>,
+                          util::wrapped_predicate<same_depends_on, DependsOnT>>(designatedFactories_);
 
             return construct(dNameTag, mappedTuple);
         }
@@ -574,7 +444,7 @@ namespace eld
         decltype(auto) construct(eld::build_t<T>, std::tuple<>)
         {
             auto mappedTuple =
-                map_tuple<wrapped_predicate<traits::is_named>, wrapped_predicate<same_type, T>>(
+                util::map_tuple<util::wrapped_predicate<traits::is_named>, util::wrapped_predicate<same_type, T>>(
                     designatedFactories_);
             return construct(mappedTuple);
         }

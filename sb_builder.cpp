@@ -62,7 +62,7 @@ namespace space
 template<>
 struct eld::get_name_list<space::Layer>
 {
-    using type = type_list<alias::A, type_tt<alias::B>, alias::C>;
+    using type = util::type_list<alias::A, type_tt<alias::B>, alias::C>;
 };
 
 // end of user-defined header
@@ -103,19 +103,19 @@ int main(int, char **)
 
     using output_sequence = typename eld::detail::map_tuple_index_sequence<
         tuple_input,
-        eld::type_list<eld::wrapped_predicate<std::is_integral>>>::type;
+        eld::util::type_list<eld::util::wrapped_predicate<std::is_integral>>>::type;
     static_assert(std::is_same_v<output_sequence, std::index_sequence<1, 3>>);
 
     using find_int = typename eld::detail::map_tuple_index_sequence<
         tuple_input,
-        eld::type_list<eld::wrapped_predicate<std::is_same, int>>>::type;
+        eld::util::type_list<eld::util::wrapped_predicate<std::is_same, int>>>::type;
     static_assert(std::is_same_v<find_int, std::index_sequence<1>>);
 
     tuple_input tupleInput{};
-    auto mappedTuple = eld::map_tuple<eld::wrapped_predicate<std::is_integral>>(tupleInput);
+    auto mappedTuple = eld::util::map_tuple<eld::util::wrapped_predicate<std::is_integral>>(tupleInput);
     static_assert(std::is_same_v<decltype(mappedTuple), std::tuple<int &, size_t &>>);
 
-    auto mappedTuple2 = eld::map_tuple<eld::wrapped_predicate<std::is_integral>>(tuple_input());
+    auto mappedTuple2 = eld::util::map_tuple<eld::util::wrapped_predicate<std::is_integral>>(tuple_input());
     static_assert(std::is_same_v<decltype(mappedTuple2), std::tuple<int &, size_t &>>);
 
     auto personUnnamedFactory = eld::wrap_factory(&create_person);

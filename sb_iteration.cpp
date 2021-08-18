@@ -56,8 +56,8 @@ namespace eos::generic::algorithm
      * @tparam UtilityT Utility Interface.
      * @tparam TraitsT
      */
-    template<typename StateT/*,
-        typename InputInterfaceT,
+    template<typename StateT,
+        typename InputInterfaceT/*,
         typename UtilityT,
         typename TraitsT,
         typename LoggerT*/>
@@ -65,7 +65,7 @@ namespace eos::generic::algorithm
     {
     public:
         using state_type = StateT;
-        //        using input_interface_type = InputInterfaceT;
+        using input_interface_type = InputInterfaceT;
         //        using utility_type = UtilityT;
         //        using traits = TraitsT;
         //        //        using logger_type = LoggerT;
@@ -87,7 +87,7 @@ namespace eos::generic::algorithm
 
     private:
         state_type state_;
-        //        input_interface_type inputInterface_;
+        input_interface_type inputInterface_;
         //        utility_type utility_;
         //
         //        std::function<void(steering_type)> outputInterface_;
@@ -99,8 +99,8 @@ namespace eos::generic::algorithm
 template<>
 struct eld::get_name_list<eos::generic::algorithm::iteration>
 {
-    using type = type_list<eld::type_tt<eos::generic::algorithm::alias::state>/*,
-    eld::type_tt<eos::generic::algorithm::alias::input_interface>,
+    using type = eld::util::type_list<eld::type_tt<eos::generic::algorithm::alias::state>,
+    eld::type_tt<eos::generic::algorithm::alias::input_interface>/*,
     eld::type_tt<eos::generic::algorithm::alias::utility>,
     eld::type_tt<eos::alias::traits>,
     eld::type_tt<eos::alias::logger>*/>;
@@ -189,32 +189,35 @@ namespace eos::stubs
 
 /////////////////////////////////////////////////
 
-template<typename InputT, typename Callable>
-auto make_builder(Callable &&onIteration)
-{
-    namespace algorithm = eos::generic::algorithm;
-    namespace alias = eos::generic::algorithm::alias;
-
-    return eld::make_builder(
-        eld::d_named_factory<alias::state, algorithm::iteration>([]()
-        { return eos::stubs::State(); })/*,
-eld::d_named_factory<alias::input_interface, algorithm::iteration>(
-[]() { return eos::stubs::InputInterface<InputT>(); }),
-eld::d_named_factory<alias::utility, algorithm::iteration>(
-[]() { return eos::stubs::Utility(); }),
-eld::d_named_factory<alias::output_interface, algorithm::iteration>(
-[onIteration = std::forward<Callable>(onIteration)]() mutable { return onIteration; }),
-eld::named_factory<eos::alias::traits>([]() { return eos::stubs::Traits(); })*/);
-}
+// template<typename InputT, typename Callable>
+// auto make_builder(Callable &&onIteration)
+//{
+//     namespace algorithm = eos::generic::algorithm;
+//     namespace alias = eos::generic::algorithm::alias;
+//
+//     return eld::make_builder(
+//         eld::d_named_factory<alias::state, algorithm::iteration>([]()
+//         { return eos::stubs::State(); }),
+// eld::d_named_factory<alias::input_interface, algorithm::iteration>(
+//[]() { return eos::stubs::InputInterface<InputT>(); })/*,
+// eld::d_named_factory<alias::utility, algorithm::iteration>(
+//[]() { return eos::stubs::Utility(); }),
+// eld::d_named_factory<alias::output_interface, algorithm::iteration>(
+//[onIteration = std::forward<Callable>(onIteration)]() mutable { return onIteration; }),
+// eld::named_factory<eos::alias::traits>([]() { return eos::stubs::Traits(); })*/);
+// }
 
 int main(int, char **)
 {
     namespace algorithm = eos::generic::algorithm;
+    namespace alias = eos::generic::algorithm::alias;
+
+
 
     std::atomic_bool called{ false };
 
-    auto builder = make_builder<eos::stubs::Input>([&called](auto &&) { called = true; });
-
-    auto iteration = eld::make_lasanga<algorithm::iteration>(builder);
+    //    auto builder = make_builder<eos::stubs::Input>([&called](auto &&) { called = true; });
+    //
+    //    auto iteration = eld::make_lasanga<algorithm::iteration>(builder);
     return 0;
 }
