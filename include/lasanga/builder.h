@@ -201,12 +201,12 @@ namespace eld
         template<typename /*BuilderT*/, typename /*NameList*/>
         struct get_type_list;
 
-        template<typename BuilderT, template<typename...> class TTypeListT, typename... NameTags>
-        struct get_type_list<BuilderT, TTypeListT<NameTags...>>
+        template<typename BuilderT, template<typename...> class TNameListT, typename... NameTagsT>
+        struct get_type_list<BuilderT, TNameListT<NameTagsT...>>
         {
-            // TODO: implement
-//            using type = TTypeListT<typename BuilderT::template type_by_name<NameTags>...>;
-            using type = util::type_list<>;
+            using type = typename util::resolve_name_list<TNameListT<NameTagsT...>,
+                                                          typename BuilderT::factory_types,
+                                                          util::type_list>::type;
         };
     }   // namespace traits
 
@@ -235,8 +235,6 @@ namespace eld
 
         // TODO: deduce name list from unspecialized GenericClass
         using name_list = typename GetNameList<GenericClass, Modifiers...>::type;
-
-        // TODO: get type list
         using type_list_t = typename traits::get_type_list<std::decay_t<BuilderT>, name_list>::type;
 
         return typename detail::specialize_t<GenericClass, type_list_t>::type(builder);
@@ -255,67 +253,34 @@ namespace eld
         return T(builder);
     }
 
-    namespace detail
-    {
-        template<typename NameTag>
-        struct is_unnamed : std::is_same<NameTag, tag::unnamed>
-        {
-        };
-
-        template<template<typename...> class TNameTag>
-        struct is_unnamed<type_tt<TNameTag>> : traits::is_same_tt<TNameTag, tag::unnamed_t>
-        {
-        };
-    }   // namespace detail
-
-    namespace traits
-    {
-        template<typename DFactoryT>
-        using is_unnamed = eld::detail::is_unnamed<typename DFactoryT::name_tag>;
-
-        template<typename DFactoryT>
-        using is_named = std::negation<is_unnamed<DFactoryT>>;
-
-        template<typename DFactoryT>
-        using name_tag = typename DFactoryT::name_tag;
-
-        template<typename DFactoryT>
-        using value_type = typename DFactoryT::value_type;
-
-        template<typename DFactoryT>
-        using depends_on_type = typename DFactoryT::depends_on_type;
-
-        template<typename DFactoryT>
-        using is_dependent = std::negation<eld::detail::is_unnamed<depends_on_type<DFactoryT>>>;
-
-    }   // namespace traits
-
     // TODO: remove/refactor this
     namespace detail
     {
         // TODO: add usage of GenericContextType to implementation
-//        template<typename NameTag, typename... DesignatedFactories>
-//        struct map_factories
-//        {
-//            using type = typename util::convert_type_list<
-//                decltype(std::tuple_cat(
-//                    std::declval<std::conditional_t<
-//                        std::is_same_v<NameTag, typename DesignatedFactories::name_tag>,
-//                        std::tuple<DesignatedFactories>,
-//                        std::tuple<>>>()...)),
-//                util::type_list>::type;
-//        };
-//
-//        template<typename NameTag, typename... DesignatedFactories>
-//        struct get_type_by_name
-//        {
-//            static_assert(!std::is_same_v<NameTag, tag::unnamed>, "NameTag must not be unnamed");
-//            using list = typename map_factories<NameTag, DesignatedFactories...>::type;
-//
-//            static_assert(util::type_list_size<list>::value <= 1, "Several NameTags found!");
-//
-//            using type = typename traits::element_type<0, list>::type::value_type;
-//        };
+        //        template<typename NameTag, typename... DesignatedFactories>
+        //        struct map_factories
+        //        {
+        //            using type = typename util::convert_type_list<
+        //                decltype(std::tuple_cat(
+        //                    std::declval<std::conditional_t<
+        //                        std::is_same_v<NameTag, typename DesignatedFactories::name_tag>,
+        //                        std::tuple<DesignatedFactories>,
+        //                        std::tuple<>>>()...)),
+        //                util::type_list>::type;
+        //        };
+        //
+        //        template<typename NameTag, typename... DesignatedFactories>
+        //        struct get_type_by_name
+        //        {
+        //            static_assert(!std::is_same_v<NameTag, tag::unnamed>, "NameTag must not be
+        //            unnamed"); using list = typename map_factories<NameTag,
+        //            DesignatedFactories...>::type;
+        //
+        //            static_assert(util::type_list_size<list>::value <= 1, "Several NameTags
+        //            found!");
+        //
+        //            using type = typename traits::element_type<0, list>::type::value_type;
+        //        };
 
         // implement search by NameTag
     }   // namespace detail
@@ -339,7 +304,7 @@ namespace eld
     class builder
     {
     public:
-        using list_factories_type = util::type_list<DesignatedFactories...>;
+        using factory_types = util::type_list<DesignatedFactories...>;
 
         template<typename... DFactoriesT>
         constexpr explicit builder(DFactoriesT &&...designatedFactories)
@@ -368,7 +333,7 @@ namespace eld
         template<typename NameTagT>
         decltype(auto) operator()(eld::name_t<NameTagT>)
         {
-            auto mappedTuple = util::map_tuple<util::wrapped_predicate<traits::is_named>,
+            auto mappedTuple = util::map_tuple<util::wrapped_predicate<traits::is_named_factory>,
                                                util::wrapped_predicate<same_name_tag, NameTagT>>(
                 designatedFactories_);
             return construct(mappedTuple);
@@ -448,7 +413,7 @@ namespace eld
         decltype(auto) construct(eld::build_t<T>, std::tuple<>)
         {
             auto mappedTuple =
-                util::map_tuple<util::wrapped_predicate<traits::is_named>,
+                util::map_tuple<util::wrapped_predicate<traits::is_named_factory>,
                                 util::wrapped_predicate<same_type, T>>(designatedFactories_);
             return construct(mappedTuple);
         }

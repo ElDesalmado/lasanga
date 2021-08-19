@@ -47,16 +47,12 @@ get_directory_property(IS_EXCLUDED EXCLUDE_FROM_ALL)
 
 # examples
 if (NOT IS_EXCLUDED AND BUILD_EXAMPLES)
-    message(STATUS "lasanga: Building examples")
-    # sandbox
+    message(STATUS "lasanga: Building tests and examples")
+
+    enable_testing()
+    find_package(GTest CONFIG REQUIRED)
+
     add_subdirectory(examples)
-
-    add_executable(sandbox sandbox.cpp)
-    target_link_libraries(sandbox lasanga)
-
-    add_executable(sb.builder sb_builder.cpp)
-    target_link_libraries(sb.builder lasanga)
-
-    add_executable(sb.iteration sb_iteration.cpp)
-    target_link_libraries(sb.iteration lasanga)
+    add_subdirectory(tests)
+    add_subdirectory(sandbox)
 endif()

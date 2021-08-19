@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "lasanga/utility/map_type_list.h"
+
 #include <cstddef>
 #include <tuple>
 #include <type_traits>
@@ -17,28 +19,50 @@ namespace eld
         {
             constexpr static size_t value = sizeof...(Types);
         };
+
+        namespace detail
+        {
+            template<typename FromT, template<typename...> class TToT>
+            struct convert_type_list_;
+
+            template<template<typename...> class TFromT,
+                     typename... TypesT,
+                     template<typename...>
+                     class TToT>
+            struct convert_type_list_<TFromT<TypesT...>, TToT>
+            {
+                using type = TToT<TypesT...>;
+            };
+
+        }   // namespace detail
+
+        template<typename FromT, template<typename...> class TToT>
+        using convert_type_list = typename detail::convert_type_list_<FromT, TToT>::type;
+
     }   // namespace util
 
     namespace detail
     {
-        template<typename WrappedPredicateT, typename T>
-        struct apply_predicate;
 
-        template<template<typename...> class Predicate,
-                 typename T,
-                 typename... Modifiers,
-                 template<template<typename...> class, typename...>
-                 class PredicateWrapper>
-        struct apply_predicate<PredicateWrapper<Predicate, Modifiers...>, T>
-        {
-            constexpr static auto value = Predicate<T, Modifiers...>::value;
-        };
 
-        template<typename T, typename... WrappedPredicates>
-        struct apply_predicates
+        template<template<typename...> class TOutputListT,
+                 typename ListWrappedPredicatesT,
+                 typename... Types>
+        struct map_type_list;
+
+        template<template<typename...> class TOutputListT,
+                 template<typename...>
+                 class TTypeListT,
+                 typename... WrappedPredicatesT,
+                 typename... Types>
+        struct map_type_list<TOutputListT, TTypeListT<WrappedPredicatesT...>, Types...>
         {
-            constexpr static auto value =
-                std::conjunction_v<apply_predicate<WrappedPredicates, T>...>;
+            using type = util::convert_type_list<
+                decltype(std::tuple_cat(std::declval<std::conditional_t<
+                                            apply_predicates<Types, WrappedPredicatesT...>::value,
+                                            std::tuple<Types>,
+                                            std::tuple<>>>()...)),
+                TOutputListT>;
         };
 
         template<typename TupleT,
@@ -131,10 +155,29 @@ namespace eld
                  typename... Types>
         struct specialize_t<TGenericClassT, TTypeListT<Types...>>
         {
-            static_assert(can_specialize<TGenericClassT,  TTypeListT<Types...>>::value,
+            static_assert(can_specialize<TGenericClassT, TTypeListT<Types...>>::value,
                           "Can not specialize TGenericClassT from a given Type List");
             using type = TGenericClassT<Types...>;
         };
+
+        template<template<typename...> class TOutputListT, typename NameT, typename... FactoriesT>
+        struct map_type_by_name
+        {
+            using type = typename map_type_list<TOutputListT, NameT, FactoriesT...>::type;
+        };
+
+        template<template<typename...> class TOutputListT, typename NameT, typename... FactoriesT>
+        struct resolve_type_by_name
+        {
+            // TODO: recursively specialize Template Types from factories
+            using type = typename map_type_by_name<TOutputListT, NameT, FactoriesT...>::type;
+
+            static_assert(util::type_list_size<type>::value != 0,
+                          "Failed to resolve type from NameTag");
+            static_assert(util::type_list_size<type>::value <= 1,
+                          "NameTag resolves to multiple types");
+        };
+
     }   // namespace detail
 
     namespace util
@@ -142,26 +185,36 @@ namespace eld
         template<typename...>
         struct type_list;
 
-        template<typename FromT, template<typename...> class TToT>
-        struct convert_type_list;
-
-        template<template<typename...> class TFromT,
-                 typename... TypesT,
-                 template<typename...>
-                 class TToT>
-        struct convert_type_list<TFromT<TypesT...>, TToT>
-        {
-            using type = TToT<TypesT...>;
-        };
-
         template<template<typename...> class, typename...>
         struct wrapped_predicate;
 
         template<typename... WrappedPredicates, typename TupleT>
         constexpr auto map_tuple(TupleT &&tuple)
         {
-            return detail::map_tuple<std::decay_t<TupleT>, type_list<WrappedPredicates...>>{}(
+            return eld::detail::map_tuple<std::decay_t<TupleT>, type_list<WrappedPredicates...>>{}(
                 tuple);
         }
+
+        template<typename NameListT,
+                 typename FactoryListT,
+                 template<typename...>
+                 class TOutputListT>
+        struct resolve_name_list;
+
+        template<template<typename...> class TNameListT,
+                 typename... NamesT,
+                 template<typename...>
+                 class TFactoryListT,
+                 typename... FactoriesT,
+                 template<typename...>
+                 class TOutputListT>
+        struct resolve_name_list<TNameListT<NamesT...>, TFactoryListT<FactoriesT...>, TOutputListT>
+        {
+            using type =
+                TOutputListT<typename eld::detail::resolve_type_by_name<TOutputListT,
+                                                                        NamesT,
+                                                                        FactoriesT...>::type...>;
+        };
+
     }   // namespace util
 }   // namespace eld

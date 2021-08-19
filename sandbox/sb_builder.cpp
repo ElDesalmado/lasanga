@@ -121,7 +121,7 @@ int main(int, char **)
     static_assert(std::is_same_v<decltype(mappedTuple2), std::tuple<int &, size_t &>>);
 
     auto personUnnamedFactory = eld::wrap_factory(&create_person);
-    static_assert(eld::traits::is_unnamed<decltype(personUnnamedFactory)>::value);
+    static_assert(eld::traits::is_unnamed_factory<decltype(personUnnamedFactory)>::value);
 
     auto newBuilder = eld::make_builder(eld::wrap_factory(&create_person),
                                         eld::named_factory<alias::A>(&create_person),

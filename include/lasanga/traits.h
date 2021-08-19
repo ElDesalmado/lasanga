@@ -117,15 +117,35 @@ namespace eld
         {
         };
 
-        template<template<typename...> class>
-        struct is_unspecified : std::false_type
+        template<typename DFactoryT>
+        using name_tag = typename DFactoryT::name_tag;
+
+        template<typename DFactoryT>
+        using value_type = typename DFactoryT::value_type;
+
+        template<typename DFactoryT>
+        using depends_on_type = typename DFactoryT::depends_on_type;
+
+        template<typename NameTag>
+        struct is_unnamed : std::is_same<NameTag, tag::unnamed>
         {
         };
 
-        template<>
-        struct is_unspecified<tag::unnamed_t> : std::true_type
+        template<template<typename...> class TNameTag,
+                 template<template<typename...> class>
+                 class TTWrapperT>
+        struct is_unnamed<TTWrapperT<TNameTag>> : is_same_tt<TNameTag, tag::unnamed_t>
         {
         };
+
+        template<typename DFactoryT>
+        using is_unnamed_factory = is_unnamed<name_tag<DFactoryT>>;
+
+        template<typename DFactoryT>
+        using is_named_factory = std::negation<is_unnamed_factory<DFactoryT>>;
+
+        template<typename DFactoryT>
+        using is_dependent = std::negation<is_unnamed<depends_on_type<DFactoryT>>>;
 
     }   // namespace traits
 
