@@ -1,6 +1,8 @@
 ﻿#pragma once
 
+#include "lasanga/utility/apply_predicates.h"
 #include "lasanga/utility/map_type_list.h"
+#include "lasanga/utility/convert_type_list.h"
 
 #include <cstddef>
 #include <tuple>
