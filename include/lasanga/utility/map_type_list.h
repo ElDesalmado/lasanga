@@ -29,4 +29,13 @@ namespace eld::util
                     std::tuple<>>>()...)),
             TTypeListT>::type;
     };
+
+    template<typename TTypeListT, typename... WrappedPredicates>
+    using map_type_list_conjunction =
+        map_type_list<std::conjunction, TTypeListT, WrappedPredicates...>;
+
+    template<typename TTypeListT, typename... WrappedPredicates>
+    using map_type_list_disjunction =
+        map_type_list<std::disjunction, TTypeListT, WrappedPredicates...>;
+
 }   // namespace eld::util

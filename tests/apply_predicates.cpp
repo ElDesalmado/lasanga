@@ -59,10 +59,23 @@ TEST(apply_predicates_conjunction, same_and_integral)
     EXPECT_TRUE(resTrue);
 
     constexpr auto resFalse =
-        apply_predicates_conjunction<stub::predicate_wrapper<std::is_same, foo>,
-                                     stub::predicate_wrapper<std::is_integral>,
-                                     foo>();
+        apply_predicates_conjunction<foo,
+                                     stub::predicate_wrapper<std::is_same, foo>,
+                                     stub::predicate_wrapper<std::is_integral>>();
     EXPECT_FALSE(resFalse);
+}
+
+TEST(apply_predicates_conjunction, is_integral_signed)
+{
+    using namespace eld::util;
+
+    using int_t = int;
+    constexpr bool resTrue =
+        apply_predicates_conjunction_v<int_t,
+                                       stub::predicate_wrapper<std::is_integral>,
+                                       stub::predicate_wrapper<std::is_signed>>;
+
+    EXPECT_TRUE(resTrue);
 }
 
 int main(int argc, char **argv)
