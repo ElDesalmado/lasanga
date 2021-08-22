@@ -73,6 +73,7 @@ namespace eld
             {
             };
 
+            // TODO: add depends_on_type
             template<typename AliasT,
                      typename TTypeListT,
                      typename = typename map_type_list_conjunction<
@@ -80,6 +81,7 @@ namespace eld
                          util::wrapped_predicate<is_same_name_tag, AliasT>>::type>
             struct find_type_by_alias;
 
+            // TODO: add depends_on_type
             template<typename AliasT,
                      template<typename...>
                      class TTypeListT,
@@ -103,18 +105,44 @@ namespace eld
                 using type = typename FoundTypeT::value_type;
             };
 
+            template<template<template<typename...> class, typename...> class TTGetAliasListT,
+                     typename TWrappedRootT,
+                     typename... ModifiersT>
+            struct get_alias_list_from_wrapped
+            {
+                // just to allow compilation. This type is not valid
+                using type = void;
+            };
+
+            template<template<template<typename...> class, typename...> class TTGetAliasListT,
+                     template<template<typename...> class>
+                     class TTRootWrapperT,
+                     template<typename...>
+                     class TRootTypeT,
+                     typename... ModifiersT>
+            struct get_alias_list_from_wrapped<TTGetAliasListT,
+                                               TTRootWrapperT<TRootTypeT>,
+                                               ModifiersT...>
+            {
+                using type = typename TTGetAliasListT<TRootTypeT, ModifiersT...>::type;
+            };
+
             template<template<template<typename...> class, typename...> class TTTreeNodeT,
+                     template<template<typename...> class, typename...>
+                     class TTGetAliasListT,
                      typename TWrappedRootT,
                      typename TAliasListT,
                      typename TTypeMapListT,
                      typename... ModifiersT>
-            struct construct_tree
+            struct construct_tree_recursive
             {
                 // just to allow compilation. This type is not valid
                 using type = void;
             };
 
             template<template<template<typename...> class, typename...> class TTTreeNodeT,
+                     template<template<typename...> class, typename...>
+                     class TTGetAliasListT,
                      template<template<typename...> class>
                      class TTRootWrapperT,
                      template<typename...>
@@ -124,68 +152,56 @@ namespace eld
                      typename... AliasesT,
                      typename TTypeMapListT,
                      typename... ModifiersT>
-            struct construct_tree<TTTreeNodeT,
-                                  TTRootWrapperT<TRootTypeT>,
-                                  TTypeListT<AliasesT...>,
-                                  TTypeMapListT,
-                                  ModifiersT...>
+            struct construct_tree_recursive<TTTreeNodeT,
+                                            TTGetAliasListT,
+                                            TTRootWrapperT<TRootTypeT>,
+                                            TTypeListT<AliasesT...>,
+                                            TTypeMapListT,
+                                            ModifiersT...>
             {
                 // TODO: Get Aliases List from TRootTypeT !here!
                 template<typename AliasT>
                 using find_type_t =
                     typename detail::find_type_by_alias<AliasT, TTypeMapListT>::type;
 
-                using type = TTTreeNodeT<
-                    TRootTypeT,
-                    std::conditional_t<traits::is_template_wrapper<find_type_t<AliasesT>>::value,
-                                       typename construct_tree<TTTreeNodeT,
-                                                               find_type_t<AliasesT>,
-                                                               TTypeListT<AliasesT...>,
-                                                               TTypeMapListT,
-                                                               ModifiersT...>::type,
-                                       find_type_t<AliasesT>>...>;
+                using type =
+                    TTTreeNodeT<TRootTypeT,
+                                std::conditional_t<
+                                    traits::is_template_wrapper<find_type_t<AliasesT>>::value,
+                                    typename construct_tree_recursive<
+                                        TTTreeNodeT,
+                                        TTGetAliasListT,
+                                        find_type_t<AliasesT>,
+                                        typename get_alias_list_from_wrapped<TTGetAliasListT,
+                                                                             find_type_t<AliasesT>,
+                                                                             ModifiersT...>::type,
+                                        TTypeMapListT,
+                                        ModifiersT...>::type,
+                                    find_type_t<AliasesT>>...>;
             };
 
+            template<template<typename...> class, typename...>
+            struct wrapped_tt;
+
         }   // namespace detail
-            //
-            //        template<template<template<typename...> class, typename...> class TTTreeNodeT,
-            //                 template<typename...>
-            //                 class TRootTypeT,
-            //                 typename TAliasListT,
-            //                 typename TTypeMapListT,
-            //                 typename... ModifiersT>
-            //        struct construct_tree;
-            //
-            //        template<template<template<typename...> class, typename...> class TTTreeNodeT,
-            //                 template<typename...>
-            //                 class TRootTypeT,
-            //                 template<typename...>
-            //                 class TTypeListT,
-            //                 typename... AliasTypesT,
-            //                 typename... AliasToTypesT,
-            //                 typename... ModifiersT>
-            //        struct construct_tree<TTTreeNodeT,
-            //                              TRootTypeT,
-            //                              TTypeListT<AliasTypesT...>,
-            //                              TTypeListT<AliasToTypesT...>,
-            //                              ModifiersT...>
-            //        {
-            //            template<typename AliasT>
-            //            using find_type_t =
-            //                typename detail::find_type_by_alias<AliasT,
-            //                TTypeListT<AliasToTypesT...>>::type;
-            //            // TODO: implement
-            //            /**
-            //             * for each AliasType find a corresponding type.
-            //             * If a corresponding type is a template typename, call construct_tree
-            //             recursively
-            //             */
-            //            using type = TTTreeNodeT<
-            //                TRootTypeT,
-        //                std::conditional_t<traits::is_template_wrapper<find_type_t<AliasTypesT>>::value,
-        //                                   typename construct_tree<>::type,
-        //                                   find_type_t<AliasTypesT>>...>;
-        //        };
+
+        template<template<template<typename...> class, typename...> class TTTreeNodeT,
+                 template<template<typename...> class, typename...>
+                 class TTGetAliasListT,
+                 template<typename...>
+                 class TGenericRootT,
+                 typename TTypeMapListT,
+                 typename... ModifiersT>
+        struct construct_tree_generic
+        {
+            using type = typename detail::construct_tree_recursive<
+                TTTreeNodeT,
+                TTGetAliasListT,
+                detail::wrapped_tt<TGenericRootT>,
+                typename TTGetAliasListT<TGenericRootT, ModifiersT...>::type,
+                TTypeMapListT,
+                ModifiersT...>::type;
+        };
 
         /**
          * Default type for a template tree type node.
@@ -196,6 +212,18 @@ namespace eld
         struct type_node
         {
         };
+
+        template<template<typename...> class TGenericClassT, typename... ModifiersT>
+        struct get_alias_list;
+
+        template<template<typename...> class TGenericRootT,
+                 typename TTypeMapListT,
+                 typename... ModifiersT>
+        using construct_tree = construct_tree_generic<type_node,
+                                                      get_alias_list,
+                                                      TGenericRootT,
+                                                      TTypeMapListT,
+                                                      ModifiersT...>;
 
     }   // namespace util
 }   // namespace eld

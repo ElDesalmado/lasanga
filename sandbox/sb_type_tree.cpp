@@ -4,6 +4,8 @@
 #include <iostream>
 #include <string>
 
+std::string constructed;
+
 template<typename...>
 struct type_list;
 
@@ -18,7 +20,44 @@ namespace alias
     struct D;
 }   // namespace alias
 
-std::string constructed;
+template<typename A, typename B, typename C>
+struct RootA
+{
+    RootA()
+    {
+        constructed += "RootA";
+        constructed += ' ';
+    }
+
+    A a;
+    B b;
+    C c;
+};
+
+template<typename A, typename B>
+struct RootB
+{
+    RootB()
+    {
+        constructed += "RootB";
+        constructed += ' ';
+    }
+
+    A a;
+    B b;
+};
+
+template<>
+struct eld::util::get_alias_list<RootA>
+{
+    using type = type_list<alias::A, alias::B, alias::C>;
+};
+
+template<>
+struct eld::util::get_alias_list<RootB>
+{
+    using type = type_list<alias::A, alias::B>;
+};
 
 template<typename... T>
 struct GenericRoot : T...
@@ -37,8 +76,6 @@ struct descriptor_t
     using name_tag = AliasT;
     using value_type = TypeT;
 };
-
-
 
 int main()
 {
@@ -67,20 +104,23 @@ int main()
 
     using descriptor_a = descriptor_t<alias::A, Letter<'A'>>;
     using descriptor_b = descriptor_t<alias::B, Letter<'B'>>;
+    using descriptor_c = descriptor_t<alias::C, wrapped_tt<RootB>>;
     using descriptor_generic = descriptor_t<alias::C, wrapped_tt<GenericRoot>>;
-//    using descriptor_d = descriptor_t<alias::D,
-
+    //    using descriptor_d = descriptor_t<alias::D,
 
     using found_type =
         typename detail::find_type_by_alias<alias::B, type_list<descriptor_a, descriptor_b>>::type;
     static_assert(std::is_same_v<found_type, Letter<'B'>>);
 
-    using constructed_t =
-        typename detail::construct_tree<type_node,
-                                        wrapped_tt<GenericRoot>,
-                                        type_list<alias::A, alias::B>,
-                                        type_list<descriptor_a, descriptor_b>>::type;
-    specialize_tree<constructed_t>::type();
+    specialize_tree<construct_tree<RootB, type_list<descriptor_a, descriptor_b>>::type>::type();
+    std::cout << constructed << std::endl;
+    constructed.clear();
+
+    using nested_type_2 = specialize_tree<
+        construct_tree<RootA, type_list<descriptor_a, descriptor_b, descriptor_c>>::type>::type;
+
+    [[maybe_unused]] nested_type_2 nestedType2{};
+
     std::cout << constructed << std::endl;
     constructed.clear();
 
