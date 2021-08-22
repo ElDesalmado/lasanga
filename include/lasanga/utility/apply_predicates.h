@@ -69,4 +69,7 @@ namespace eld::util
     constexpr inline bool apply_predicates_disjunction_v =
         apply_predicates_disjunction<T, WrappedPredicates...>::value;
 
+    template <template<typename...> class, typename...>
+    struct wrapped_predicate;
+
 }   // namespace eld::util
