@@ -210,35 +210,7 @@ namespace eld
         };
     }   // namespace traits
 
-    /**
-     * Create an object of a fully specialized class template GenericClass with specialization types
-     * deduced from BuilderT using a user-defined specialization for `get_type_list<GenericClass,
-     * Modifiers...>`.
-     * @tparam GenericClass
-     * @tparam GetNameList Customization for a type to get a name list from. Using get_name_list by
-     * default
-     * @tparam Modifiers
-     * @tparam BuilderT
-     * @param builder
-     * @return
-     *
-     * \todo Try to deduce name list from GenericClass
-     */
-    template<template<typename...> class GenericClass,
-             template<template<typename...> class, typename...> class GetNameList = get_name_list,
-             typename... Modifiers,
-             typename BuilderT>
-    constexpr auto make_lasanga(BuilderT &&builder)
-    {
-        static_assert(traits::is_complete<GetNameList<GenericClass, Modifiers...>>::value,
-                      "Name list has not been defined for GenericClass");
 
-        // TODO: deduce name list from unspecialized GenericClass
-        using name_list = typename GetNameList<GenericClass, Modifiers...>::type;
-        using type_list_t = typename traits::get_type_list<std::decay_t<BuilderT>, name_list>::type;
-
-        return typename detail::specialize_t<GenericClass, type_list_t>::type(builder);
-    }
 
     /**
      * Create an object of a class T using a Builder.
@@ -304,7 +276,7 @@ namespace eld
     class builder
     {
     public:
-        using factory_types = util::type_list<DesignatedFactories...>;
+        using factories_list = util::type_list<DesignatedFactories...>;
 
         template<typename... DFactoriesT>
         constexpr explicit builder(DFactoriesT &&...designatedFactories)

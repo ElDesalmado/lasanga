@@ -3,6 +3,7 @@
 #include "lasanga/utility/apply_predicates.h"
 #include "lasanga/utility/map_type_list.h"
 #include "lasanga/utility/convert_type_list.h"
+#include "lasanga/utility/type_tree.h"
 
 #include <cstddef>
 #include <tuple>
@@ -198,22 +199,18 @@ namespace eld
         }
 
         template<typename NameListT,
-                 typename FactoryListT,
-                 template<typename...>
-                 class TOutputListT>
+                 typename FactoryListT>
         struct resolve_name_list;
 
         template<template<typename...> class TNameListT,
                  typename... NamesT,
                  template<typename...>
                  class TFactoryListT,
-                 typename... FactoriesT,
-                 template<typename...>
-                 class TOutputListT>
-        struct resolve_name_list<TNameListT<NamesT...>, TFactoryListT<FactoriesT...>, TOutputListT>
+                 typename... FactoriesT>
+        struct resolve_name_list<TNameListT<NamesT...>, TFactoryListT<FactoriesT...>>
         {
             using type =
-                TOutputListT<typename eld::detail::resolve_type_by_name<TOutputListT,
+                TFactoryListT<typename eld::detail::resolve_type_by_name<TFactoryListT,
                                                                         NamesT,
                                                                         FactoriesT...>::type...>;
         };

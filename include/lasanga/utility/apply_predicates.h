@@ -49,10 +49,8 @@ namespace eld::util
      * @tparam WrappedPredicates
      */
     template<typename T, typename... WrappedPredicates>
-    struct apply_predicates_conjunction :
-      apply_predicates<std::conjunction, T, WrappedPredicates...>
-    {
-    };
+    using apply_predicates_conjunction =
+        apply_predicates<std::conjunction, T, WrappedPredicates...>;
 
     template<typename T, typename... WrappedPredicates>
     constexpr inline bool apply_predicates_conjunction_v =
@@ -64,10 +62,8 @@ namespace eld::util
      * @tparam WrappedPredicates
      */
     template<typename T, typename... WrappedPredicates>
-    struct apply_predicates_disjunction :
-      apply_predicates<std::disjunction, T, WrappedPredicates...>
-    {
-    };
+    using apply_predicates_disjunction =
+        apply_predicates<std::disjunction, T, WrappedPredicates...>;
 
     template<typename T, typename... WrappedPredicates>
     constexpr inline bool apply_predicates_disjunction_v =
