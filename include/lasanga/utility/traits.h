@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "lasanga/utility.h"
+//#include "lasanga/utility.h"
 
 #include <cstddef>
 #include <tuple>
@@ -39,6 +39,31 @@ namespace eld
 
     namespace traits
     {
+        template<typename>
+        struct is_type_tree : std::false_type
+        {
+        };
+
+        template<template<template<typename...> class, typename...> class TTNodeTypeT,
+                 template<typename...>
+                 class TGenericClassT,
+                 typename... SpecT>
+        struct is_type_tree<TTNodeTypeT<TGenericClassT, SpecT...>> : std::true_type
+        {
+        };
+
+        template<typename>
+        struct is_template_wrapper : std::false_type
+        {
+        };
+
+        template<template<template<typename...> class, typename...> class TTWrapperTypeT,
+                 template<typename...>
+                 class TGenericTypeT>
+        struct is_template_wrapper<TTWrapperTypeT<TGenericTypeT>> : std::true_type
+        {
+        };
+
         template<typename T>
         struct is_tuple : std::false_type
         {
