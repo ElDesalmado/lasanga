@@ -103,25 +103,5 @@ int main()
     std::cout << constructed << std::endl;
     constructed.clear();
 
-//    using descriptor_a = descriptor_t<alias::A, Letter<'A'>>;
-//    using descriptor_b = descriptor_t<alias::B, Letter<'B'>>;
-//    using descriptor_c = descriptor_t<alias::C, wrapped_tt<RootB>>;
-
-//    using found_type =
-//        typename detail::find_type_by_alias<alias::B, type_list<descriptor_a, descriptor_b>>::type;
-//    static_assert(std::is_same_v<found_type, Letter<'B'>>);
-//
-//    specialize_tree<construct_tree_old<RootB, type_list<descriptor_a, descriptor_b>>::type>::type();
-//    std::cout << constructed << std::endl;
-//    constructed.clear();
-//
-//    using nested_type_2 = specialize_tree<
-//        construct_tree_old<RootA, type_list<descriptor_a, descriptor_b, descriptor_c>>::type>::type;
-//
-//    [[maybe_unused]] nested_type_2 nestedType2{};
-//
-//    std::cout << constructed << std::endl;
-//    constructed.clear();
-
     return 0;
 }
