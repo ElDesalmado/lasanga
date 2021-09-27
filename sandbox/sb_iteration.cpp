@@ -97,13 +97,13 @@ namespace eos::generic::algorithm
 
 // TODO: deduce it from the class
 template<>
-struct eld::get_name_list<eos::generic::algorithm::iteration>
+struct eld::get_alias_list<eos::generic::algorithm::iteration>
 {
-    using type = eld::util::type_list<eld::type_tt<eos::generic::algorithm::alias::state>,
-    eld::type_tt<eos::generic::algorithm::alias::input_interface>/*,
-    eld::type_tt<eos::generic::algorithm::alias::utility>,
-    eld::type_tt<eos::alias::traits>,
-    eld::type_tt<eos::alias::logger>*/>;
+    using type = eld::util::type_list<eld::wrapped_tt<eos::generic::algorithm::alias::state>,
+    eld::wrapped_tt<eos::generic::algorithm::alias::input_interface>/*,
+    eld::wrapped_tt<eos::generic::algorithm::alias::utility>,
+    eld::wrapped_tt<eos::alias::traits>,
+    eld::wrapped_tt<eos::alias::logger>*/>;
 };
 
 namespace eos::stubs

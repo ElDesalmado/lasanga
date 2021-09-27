@@ -1,19 +1,20 @@
 ﻿#pragma once
 
-#include "lasanga/traits.h"
+#include "lasanga/tags.h"
+#include "lasanga/generic/traits.h"
 
 namespace eld
 {
     // TODO: designated factory with multiple callable types?
     template<typename CallableT,
              typename ValueTypeT,
-             typename NameTagT = eld::tag::unnamed,
+             typename AliasTagT = eld::tag::unnamed,
              typename DependsOnT = eld::tag::unnamed>
     class designated_factory
     {
     public:
         using value_type = ValueTypeT;
-        using name_tag = NameTagT;
+        using alias_tag = AliasTagT;
         using depends_on_type = DependsOnT;
 
         template<
@@ -88,7 +89,7 @@ namespace eld
         static_assert(!traits::is_same_tt<NameTagT, tag::unnamed_t>::value,
                       "Template NamedTag must not be unspecified.");
 
-        return named_factory<type_tt<NameTagT>, std::decay_t<Callable>>(
+        return named_factory<wrapped_tt<NameTagT>, std::decay_t<Callable>>(
             std::forward<Callable>(callable));
     }
 
@@ -141,7 +142,7 @@ namespace eld
     template<template<typename...> class TNameTagT, typename DependsOnT, typename Callable>
     constexpr auto d_named_factory(Callable &&callable)
     {
-        return d_named_factory<type_tt<TNameTagT>, DependsOnT>(std::forward<Callable>(callable));
+        return d_named_factory<wrapped_tt<TNameTagT>, DependsOnT>(std::forward<Callable>(callable));
     }
 
     template<template<typename...> class TNameTagT, typename DependsOnT, typename Callable>
@@ -160,7 +161,7 @@ namespace eld
     template<typename NameTagT, template<typename...> class TDependsOnT, typename Callable>
     constexpr auto d_named_factory(Callable &&callable)
     {
-        return d_named_factory<NameTagT, type_tt<TDependsOnT>>(std::forward<Callable>(callable));
+        return d_named_factory<NameTagT, wrapped_tt<TDependsOnT>>(std::forward<Callable>(callable));
     }
 
     template<typename NameTagT, template<typename...> class TDependsOnT, typename Callable>
@@ -182,7 +183,7 @@ namespace eld
              typename Callable>
     constexpr auto d_named_factory(Callable &&callable)
     {
-        return d_named_factory<type_tt<TNameTagT>, type_tt<TDependsOnT>>(
+        return d_named_factory<wrapped_tt<TNameTagT>, wrapped_tt<TDependsOnT>>(
             std::forward<Callable>(callable));
     }
 

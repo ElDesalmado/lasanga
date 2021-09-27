@@ -1,6 +1,8 @@
 ﻿#pragma once
 
-#include "lasanga/traits.h"
+#include "lasanga/generic/resolve_generic_class.h"
+#include "lasanga/generic/traits.h"
+#include "lasanga/tags.h"
 #include "lasanga/utility.h"
 
 #include <type_traits>
@@ -28,192 +30,10 @@ namespace eld
 
     }   // namespace traits
 
-    /**
-     * Wrapper type to store unspecialized template class (for example, within a type_list)
-     */
-    template<template<typename...> class>
-    struct type_tt
-    {
-    };
-
-    /**
-     * Builder tag. Used to construct an object by NameTag
-     */
-    template<typename>
-    struct name_t
-    {
-    };
-
-    /**
-     * Builder tag. Used to construct an object by unspecialized template NameTag. Template NameTag
-     * can be used to overload a get<NameTag> function
-     */
-    template<template<typename...> class>
-    struct name_tt
-    {
-    };
-
-    /**
-     * Helper function to deduce name_t or name_tt
-     */
-    template<typename NonT>
-    constexpr name_t<NonT> name_tag()
-    {
-        return {};
-    }
-
-    /**
-     * Helper function to deduce name_t or name_tt
-     */
-    template<template<typename...> class TT>
-    constexpr name_tt<TT> name_tag()
-    {
-        return {};
-    }
-
-    /**
-     * Build tag. Using DependentName to specialize an object to build by NameTag.
-     * @tparam DependsOnT NameTag or a typename of a class that an object depends on.
-     * @tparam NameTagT
-     */
-    template<typename NameTagT, typename DependsOnT, typename...>
-    struct d_name_t
-    {
-    };
-
-    template<template<typename...> class TNameTagT, typename DependsOnT, typename... Modifiers>
-    struct d_name_tt
-    {
-    };
-
-    /**
-     * Builder tag. Used to construct an object within a GenericClass by NameTag and a set of
-     * Modifiers
-     * @tparam TDependsOnT Unspecialized template class that owns an object to be constructed.
-     * @tparam NameTagT Tag designated a name for a type.
-     * @tparam Modifiers A set of modifiers. Can be used to held in distinguishing between different
-     * contexts and TDependsOnT'es
-     */
-    template<typename NameTagT, template<typename...> class TDependsOnT, typename... Modifiers>
-    struct dt_name_t
-    {
-    };
-
-    template<template<typename...> class TNameTagT,
-             template<typename...>
-             class TDependsOnT,
-             typename... Modifiers>
-    struct dt_name_tt
-    {
-    };
-
-    /**
-     * Helper function to resolve between typename and template DependentName
-     * @tparam DependsOnT
-     * @tparam NameTag
-     * @tparam Modifiers
-     * @return
-     */
-    template<typename NameTagT, typename DependsOnT, typename...>
-    constexpr d_name_t<NameTagT, DependsOnT> d_name_tag()
-    {
-        return {};
-    }
-
-    template<template<typename...> class TNameTagT, typename DependsOnT, typename... Modifiers>
-    constexpr d_name_tt<TNameTagT, DependsOnT, Modifiers...> d_name_tag()
-    {
-        return {};
-    }
-
-    /**
-     * Helper function to resolve between typename and template DependentName
-     * @tparam TDependsOnT
-     * @tparam NameTagT
-     * @tparam Modifiers
-     * @return
-     */
-    template<typename NameTagT, template<typename...> class TDependsOnT, typename... Modifiers>
-    constexpr dt_name_t<NameTagT, TDependsOnT, Modifiers...> d_name_tag()
-    {
-        return {};
-    }
-
-    template<template<typename...> class TNameTagT,
-             template<typename...>
-             class TDependsOnT,
-             typename... Modifiers>
-    constexpr dt_name_tt<TNameTagT, TDependsOnT, Modifiers...> d_name_tag()
-    {
-        return {};
-    }
-
-    /**
-     * Build tag. Used to construct an object by its type.
-     */
-    template<typename>
-    struct build_t
-    {
-    };
-
-    /**
-     * Build tag. Used to construct an object of a specialization (Spec) type for a class template
-     * Type<Spec>
-     * @tparam Type
-     * @tparam Modifiers
-     */
-    template<template<typename...> class Type, typename... Modifiers>
-    struct build_tt
-    {
-    };
-
-    /**
-     * Helper function to deduce name_t or name_tt
-     */
-    template<typename NonT>
-    constexpr build_t<NonT> build_tag()
-    {
-        return {};
-    }
-
-    /**
-     * Helper function to deduce name_t or name_tt
-     */
-    template<template<typename...> class TT>
-    constexpr build_tt<TT> build_tag()
-    {
-        return {};
-    }
-
-    /**
-     * Helper Mapping function to provide a list of names for a given unspecialized class template
-     * GenericClass using a set of Modifiers.
-     * When implementing a specialization, one needs to define a member typename `type =
-     * type_list<...>`
-     * @tparam GenericClass
-     * @tparam Modifiers
-     */
-    template<template<typename...> class GenericClass, typename... Modifiers>
-    struct get_name_list;
-
-    namespace traits
-    {
-        template<typename /*BuilderT*/, typename /*NameList*/>
-        struct get_type_list;
-
-        template<typename BuilderT, template<typename...> class TNameListT, typename... NameTagsT>
-        struct get_type_list<BuilderT, TNameListT<NameTagsT...>>
-        {
-            using type = typename util::resolve_name_list<TNameListT<NameTagsT...>,
-                                                          typename BuilderT::factory_types,
-                                                          util::type_list>::type;
-        };
-    }   // namespace traits
-
 
 
     /**
-     * Create an object of a class T using a Builder.
+     * Create an object of a class TGenericClassT using a Builder.
      * @tparam T
      * @tparam Builder
      * @param builder
@@ -224,38 +44,6 @@ namespace eld
     {
         return T(builder);
     }
-
-    // TODO: remove/refactor this
-    namespace detail
-    {
-        // TODO: add usage of GenericContextType to implementation
-        //        template<typename NameTag, typename... DesignatedFactories>
-        //        struct map_factories
-        //        {
-        //            using type = typename util::convert_type_list<
-        //                decltype(std::tuple_cat(
-        //                    std::declval<std::conditional_t<
-        //                        std::is_same_v<NameTag, typename DesignatedFactories::name_tag>,
-        //                        std::tuple<DesignatedFactories>,
-        //                        std::tuple<>>>()...)),
-        //                util::type_list>::type;
-        //        };
-        //
-        //        template<typename NameTag, typename... DesignatedFactories>
-        //        struct get_type_by_name
-        //        {
-        //            static_assert(!std::is_same_v<NameTag, tag::unnamed>, "NameTag must not be
-        //            unnamed"); using list = typename map_factories<NameTag,
-        //            DesignatedFactories...>::type;
-        //
-        //            static_assert(util::type_list_size<list>::value <= 1, "Several NameTags
-        //            found!");
-        //
-        //            using type = typename traits::element_type<0, list>::type::value_type;
-        //        };
-
-        // implement search by NameTag
-    }   // namespace detail
 
     /**
      * Generic Builder class.
@@ -319,7 +107,7 @@ namespace eld
         template<template<typename...> class TNameTagT>
         decltype(auto) operator()(eld::name_tt<TNameTagT>)
         {
-            return (*this)(eld::name_t<eld::type_tt<TNameTagT>>());
+            return (*this)(eld::name_t<eld::wrapped_tt<TNameTagT>>());
         }
 
         /**
@@ -334,25 +122,25 @@ namespace eld
         template<typename NameTagT, typename DependsOnT, typename...>
         decltype(auto) operator()(eld::d_name_t<NameTagT, DependsOnT> dNameTag)
         {
-            auto mappedTuple =
+            auto mappedTupleFactories =
                 util::map_tuple<util::wrapped_predicate<traits::is_dependent>,
                                 util::wrapped_predicate<same_depends_on, DependsOnT>>(
                     designatedFactories_);
 
-            return construct(dNameTag, mappedTuple);
+            return construct(dNameTag, mappedTupleFactories);
         }
 
         template<template<typename...> class TNameTagT, typename DependsOnT, typename... Modifiers>
         decltype(auto) operator()(eld::d_name_tt<TNameTagT, DependsOnT, Modifiers...>)
         {
             // TODO: this is invalid! (?)
-            return (*this)(eld::d_name_t<eld::type_tt<TNameTagT>, DependsOnT, Modifiers...>());
+            return (*this)(eld::d_name_t<eld::wrapped_tt<TNameTagT>, DependsOnT, Modifiers...>());
         }
 
         template<typename NameTagT, template<typename...> class TDependsOnT, typename... Modifiers>
         decltype(auto) operator()(eld::dt_name_t<NameTagT, TDependsOnT, Modifiers...>)
         {
-            return (*this)(eld::d_name_t<NameTagT, eld::type_tt<TDependsOnT>, Modifiers...>());
+            return (*this)(eld::d_name_t<NameTagT, eld::wrapped_tt<TDependsOnT>, Modifiers...>());
         }
 
         template<template<typename...> class TNameTagT,
@@ -362,7 +150,7 @@ namespace eld
         decltype(auto) operator()(eld::dt_name_tt<TNameTagT, TDependsOnT, Modifiers...>)
         {
             return (*this)(
-                eld::d_name_t<eld::type_tt<TNameTagT>, eld::type_tt<TDependsOnT>, Modifiers...>());
+                eld::d_name_t<eld::wrapped_tt<TNameTagT>, eld::wrapped_tt<TDependsOnT>, Modifiers...>());
         }
 
     private:

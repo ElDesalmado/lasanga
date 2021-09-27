@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "lasanga/traits.h"
+#include "lasanga/generic/traits.h"
 
 namespace eld
 {
@@ -105,7 +105,7 @@ namespace eld
         }
 
         template<typename NameTag, typename T>
-        constexpr decltype(auto) get_element_if_tuple(T &&tuple, std::true_type /*is_tuple<T>*/)
+        constexpr decltype(auto) get_element_if_tuple(T &&tuple, std::true_type /*is_tuple<TGenericClassT>*/)
         {
             using found_type = find_type<NameTag>;
             static_assert(!std::is_same_v<found_type, tag::not_found>,
@@ -131,7 +131,7 @@ namespace eld
         template<typename /*NameTag*/, typename T, typename Callable>
         constexpr decltype(auto) get_tuple_element_default_callable(T &&obj,
                                                                     Callable &&callable,
-                                                                    std::false_type /*is_tuple<T>*/)
+                                                                    std::false_type /*is_tuple<TGenericClassT>*/)
         {
             return std::forward<Callable>(callable)(obj);
         }
@@ -139,7 +139,7 @@ namespace eld
         template<typename NameTag, typename T, typename Callable>
         constexpr decltype(auto) get_tuple_element_default_callable(T &&obj,
                                                                     Callable &&,
-                                                                    std::true_type /*is_tuple<T>*/)
+                                                                    std::true_type /*is_tuple<TGenericClassT>*/)
         {
             return get_element_if_tuple<NameTag>(obj, std::true_type());
         }
@@ -166,7 +166,7 @@ namespace eld
 
     }   // namespace detail
 
-    // TODO: implement get to take into account if T is a tuple
+    // TODO: implement get to take into account if TGenericClassT is a tuple
     template<template<typename...> class NameTag, typename... U, typename T>
     constexpr decltype(auto) get(T &&obj)
     {

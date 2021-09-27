@@ -25,10 +25,10 @@
  * In order to fully specialize template<A, B, C...>, where A, B and C may also be a
  * template<A1, B1, C1...>
  *
- * Given a `template<template<typename...> class GenericClass, typename... Modifiers>`, function
- * make_lasanga<GenericClass, Modifiers...> must:
- *  - deduce the number of template parameters for `GenericClass` with a given set of `Modifiers`
- *      - use a template_params_count<GenericClass, Modifiers...>
+ * Given a `template<template<typename...> class TGenericClassT, typename... ModifiersT>`, function
+ * make_lasanga<TGenericClassT, ModifiersT...> must:
+ *  - deduce the number of template parameters for `TGenericClassT` with a given set of `ModifiersT`
+ *      - use a template_params_count<TGenericClassT, ModifiersT...>
  *          or
  *      - count the number recursively, (?) using any_t as a template argument and checking
  *
@@ -42,8 +42,8 @@
  *
  * // TODO: (?) generic template tag to distinguish between template and template template
  *
- * // Dependent Name Tag. build by name within a template GenericClass using a set of Modifiers
- * template <template <typename...> class GenericClass, typename NameTag, typename ... Modifiers>
+ * // Dependent Name Tag. build by name within a template TGenericClassT using a set of ModifiersT
+ * template <template <typename...> class TGenericClassT, typename NameTag, typename ... ModifiersT>
  * struct dname_t{};
  *
  * // build by type. May be used only if Type is already specialized

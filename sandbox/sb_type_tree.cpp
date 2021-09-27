@@ -1,6 +1,9 @@
 ﻿
-#include "lasanga/utility/specialize.h"
-#include "lasanga/utility/type_tree.h"
+#include "lasanga/generic/construct_tree.h"
+#include "lasanga/generic/specialize_tree.h"
+
+#include "lasanga/generic/traits.h"
+#include "lasanga/lasanga.h"
 
 #include <iostream>
 #include <string>
@@ -49,13 +52,13 @@ struct RootB
 };
 
 template<>
-struct eld::util::get_alias_list<RootA>
+struct eld::get_alias_list<RootA>
 {
     using type = type_list<alias::A, alias::B, alias::C>;
 };
 
 template<>
-struct eld::util::get_alias_list<RootB>
+struct eld::get_alias_list<RootB>
 {
     using type = type_list<alias::A, alias::B>;
 };
@@ -78,8 +81,33 @@ struct descriptor_t
     using value_type = TypeT;
 };
 
+template<template<typename /*AliasT*/,
+                  template<typename...>
+                  class /*TGenericClassT*/,
+                  typename... /*TModifiersT*/>
+         class TResolveAliasTypeTT>
+struct dummy_resolve
+{
+};
+
+struct dummy_resolver
+{
+    template<typename AliasT, template<typename...> class TGenericClassT, typename... Modifiers>
+    using resolve_type = int;
+};
+
+struct dummy_builder
+{
+    using alias_type_resolver = dummy_resolver;
+};
+
+template<template<typename...> class, typename...>
+struct type_node;
+
 int main()
 {
+    dummy_resolve<eld::traits::get_alias_type_resolver<dummy_builder>::type::resolve_type>{};
+
     using namespace eld::util;
 
     GenericRoot<Letter<'A'>, Letter<'B'>, Letter<'C'>, Letter<'D'>>();

@@ -60,9 +60,9 @@ namespace space
 }   // namespace space
 
 template<>
-struct eld::get_name_list<space::Layer>
+struct eld::get_alias_list<space::Layer>
 {
-    using type = util::type_list<alias::A, type_tt<alias::B>, alias::C>;
+    using type = util::type_list<alias::A, wrapped_tt<alias::B>, alias::C>;
 };
 
 // end of user-defined header

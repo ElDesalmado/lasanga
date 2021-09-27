@@ -57,7 +57,7 @@ private:
 // user has to provide a specialization for a list of aliases in the same exact order they are used
 // as template parameters
 template<>
-struct eld::get_name_list<Crowd>
+struct eld::get_alias_list<Crowd>
 {
-    using type = util::type_list<alias::A, type_tt<alias::B>, alias::C>;
+    using type = util::type_list<alias::A, wrapped_tt<alias::B>, alias::C>;
 };

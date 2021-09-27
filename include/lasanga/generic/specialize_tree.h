@@ -1,21 +1,21 @@
 ﻿#pragma once
 
-#include "lasanga/utility/traits.h"
+#include "lasanga/generic/traits.h"
 
 #include <type_traits>
 #include <utility>
 
-namespace eld::util
+namespace eld::generic
 {
     /**
      * Fully specialize TGenericClassT class template given a Type tree with TTNodeTypeT root
      * node. Helper generic class template specialization to allow recursion.
-     * @tparam TNodeTypeT
+     * @tparam NonTemplateClass
      */
-    template<typename TNodeTypeT>
+    template<typename NonTemplateClass>
     struct specialize_tree
     {
-        using type = TNodeTypeT;
+        using type = NonTemplateClass;
     };
 
     /**
@@ -34,4 +34,7 @@ namespace eld::util
                                                        typename specialize_tree<SpecTypesT>::type,
                                                        SpecTypesT>...>;
     };
+
+    template <typename TGenericClassT>
+    using specialize_generic_class = specialize_tree<TGenericClassT>;
 }   // namespace eld::util

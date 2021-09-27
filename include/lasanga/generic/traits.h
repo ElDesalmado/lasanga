@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-//#include "lasanga/utility.h"
+#include "lasanga/tags.h"
 
 #include <cstddef>
 #include <tuple>
@@ -9,36 +9,23 @@
 
 namespace eld
 {
-    namespace tag
-    {
-        // placeholder for template template tag
-        struct any;
-
-        struct not_found
-        {
-        };
-
-        template<typename...>
-        struct build
-        {
-        };
-
-        struct default_call
-        {
-        };
-
-        struct unnamed;
-
-        template<typename...>
-        struct unnamed_t;
-
-    }   // namespace tag
-
-    constexpr inline tag::not_found not_found;
-    constexpr tag::default_call default_call_tag;
-
     namespace traits
     {
+        template <typename T>
+        struct get_alias_type_resolver
+        {
+            using type = typename T::alias_type_resolver;
+        };
+
+        template<typename>
+        struct type_list_size;
+
+        template<template<typename...> class TTypeListT, typename... Types>
+        struct type_list_size<TTypeListT<Types...>>
+        {
+            constexpr static size_t value = sizeof...(Types);
+        };
+
         template<typename>
         struct is_type_tree : std::false_type
         {
@@ -63,6 +50,9 @@ namespace eld
         struct is_template_wrapper<TTWrapperTypeT<TGenericTypeT>> : std::true_type
         {
         };
+
+        template <typename T>
+        using is_wrapped_generic_class_t = is_template_wrapper<T>;
 
         template<typename T>
         struct is_tuple : std::false_type
@@ -110,17 +100,6 @@ namespace eld
             using type = T;
         };
 
-        template<typename T>
-        struct get_name
-        {
-            using type = eld::tag::unnamed;
-        };
-
-        template<template<typename...> class Tag, typename Name, typename T, typename... U>
-        struct get_name<Tag<Name, T, U...>>
-        {
-            using type = Name;
-        };
 
         template<template<typename...> class ATT, template<typename...> class BTT>
         struct is_same_tt : std::false_type

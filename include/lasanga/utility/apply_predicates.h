@@ -5,7 +5,7 @@
 namespace eld::util
 {
     /**
-     * Apply Wrapped Predicate to typename T
+     * Apply Wrapped Predicate to typename TGenericClassT
      * @tparam T
      * @tparam WrappedPredicateT
      */
@@ -13,8 +13,8 @@ namespace eld::util
     struct apply_predicate;
 
     /**
-     * Apply TPredicateT to typename T. TPredicateT is instantiated with T as a first template
-     * parameter, and Modifiers as trailing template parameters.
+     * Apply TPredicateT to typename TGenericClassT. TPredicateT is instantiated with TGenericClassT as a first template
+     * parameter, and ModifiersT as trailing template parameters.
      * @tparam T
      * @tparam TPredicateT
      * @tparam ModifiersT
@@ -33,7 +33,7 @@ namespace eld::util
     };
 
     /**
-     * Applies several wrapped predicates to type T, applying TLogicalT function to results
+     * Applies several wrapped predicates to type TGenericClassT, applying TLogicalT function to results
      * @tparam TLogicalT
      * @tparam T
      * @tparam WrappedPredicates
@@ -44,7 +44,7 @@ namespace eld::util
     };
 
     /**
-     * Applies several wrapped predicates to type T, applying conjunction function to results
+     * Applies several wrapped predicates to type TGenericClassT, applying conjunction function to results
      * @tparam T
      * @tparam WrappedPredicates
      */
@@ -57,7 +57,7 @@ namespace eld::util
         apply_predicates_conjunction<T, WrappedPredicates...>::value;
 
     /**
-     * Applies several wrapped predicates to type T, applying disjunction function to results
+     * Applies several wrapped predicates to type TGenericClassT, applying disjunction function to results
      * @tparam T
      * @tparam WrappedPredicates
      */
