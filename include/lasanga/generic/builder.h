@@ -29,13 +29,6 @@ namespace eld
             {
             }
 
-            template<template<typename...> class TGenericClassT, typename... ModifiersT>
-            struct resolve_generic_class
-            {
-                using type = typename implementation_type::
-                    template resolve_generic_class<TGenericClassT, ModifiersT...>::type;
-            };
-
             template<typename NameTagT,
                      typename DependsOnT,
                      typename... Modifiers,
@@ -93,6 +86,11 @@ namespace eld
         return generic::builder<ImplT>(std::forward<ArgsT>(args)...);
     }
 
+    /**
+     * Customization point to specialize TGenericImplT from a set of ArgsT types
+     * @tparam TGenericImplT
+     * @tparam ArgsT
+     */
     template<template<typename...> class TGenericImplT, typename... ArgsT>
     struct specialize_builder_impl;
 

@@ -81,45 +81,23 @@ struct descriptor_t
     using value_type = TypeT;
 };
 
-template<template<typename /*AliasT*/,
-                  template<typename...>
-                  class /*TGenericClassT*/,
-                  typename... /*TModifiersT*/>
-         class TResolveAliasTypeTT>
-struct dummy_resolve
-{
-};
-
-struct dummy_resolver
-{
-    template<typename AliasT, template<typename...> class TGenericClassT, typename... Modifiers>
-    using resolve_type = int;
-};
-
-struct dummy_builder
-{
-    using alias_type_resolver = dummy_resolver;
-};
-
 template<template<typename...> class, typename...>
 struct type_node;
 
 int main()
 {
-    dummy_resolve<eld::traits::get_alias_type_resolver<dummy_builder>::type::resolve_type>{};
-
     using namespace eld::util;
 
     GenericRoot<Letter<'A'>, Letter<'B'>, Letter<'C'>, Letter<'D'>>();
     std::cout << constructed << std::endl;
     constructed.clear();
 
-    specialize_tree<
+    eld::generic::specialize_tree<
         type_node<GenericRoot, Letter<'A'>, Letter<'B'>, Letter<'C'>, Letter<'D'>>>::type();
     std::cout << constructed << std::endl;
     constructed.clear();
 
-    using nested_type = specialize_tree<
+    using nested_type = eld::generic::specialize_tree<
         type_node<GenericRoot,
                   type_node<GenericRoot,
                             Letter<'A', 1>,

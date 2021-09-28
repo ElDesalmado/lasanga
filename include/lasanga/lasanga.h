@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 // generic headers
-#include "lasanga/generic/lasanga.h"
 #include "lasanga/generic/builder.h"
+#include "lasanga/generic/lasanga.h"
 
 // default implementations
 #include "lasanga/alias_list.h"
@@ -131,47 +131,11 @@ namespace eld
     //
     //    }   // namespace detail
 
-    /**
-     * Create an object of a fully specialized class template TGenericClassT with specialization
-     * types deduced from BuilderT using a user-defined specialization for
-     * `get_type_list<TGenericClassT, ModifiersT...>`.
-     * @tparam TGenericClassT
-     * @tparam GetNameList Customization for a type to get a name list from. Using get_alias_list by
-     * default
-     * @tparam Modifiers
-     * @tparam BuilderT
-     * @param builder
-     * @return
-     *
-     * \todo Try to deduce name list from TGenericClassT
-     */
-    //    template<template<typename...> class TGenericClassT,
-    //             template<template<typename...> class, typename...> class GetNameList =
-    //             get_alias_list, typename... Modifiers, typename BuilderT>
-    //    constexpr auto make_lasanga(BuilderT &&builder)
-    //    {
-    //        static_assert(traits::is_complete<GetNameList<TGenericClassT, Modifiers...>>::value,
-    //                      "Name list has not been defined for TGenericClassT");
-    //
-    //        /**
-    //         * - Get Names List
-    //         * - Get Factories List
-    //         * - Resolve Types from Names List
-    //         */
-    //
-    //        // TODO: deduce name list from unspecialized TGenericClassT
-    //        using name_list = typename GetNameList<TGenericClassT, Modifiers...>::type;
-    //        using factories_list = typename std::decay_t<BuilderT>::factories_list;
-    //        using resolved_factories = typename detail::
-    //            resolve_factories_by_names<TGenericClassT, name_list, factories_list>::type;
-    //        using type_list = typename detail::get_types_from_factories<resolved_factories>::type;
-    //
-    //        return typename detail::specialize_t<TGenericClassT, type_list>::type(builder);
-    //    }
 
     template<template<typename...> class TGenericClassT, typename... ModifiersT, typename BuilderT>
     constexpr auto make_lasanga(BuilderT &&builder)
     {
-        return generic::make_lasanga<get_alias_list, TGenericClassT, ModifiersT...>(builder);
+        return generic::make_lasanga<generic::resolve_generic_class, TGenericClassT, ModifiersT...>(
+            builder);
     }
 }   // namespace eld

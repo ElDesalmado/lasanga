@@ -81,10 +81,7 @@ namespace eld::util
         {
             // TODO: implement
             // TODO: find factory (filter by NameTagT, DependsOnT and is invocable with ArgsT)
-            auto &factory = [](ArgsT && ...)
-            {
-                return 42;
-            };
+            auto &factory = [](ArgsT &&...) { return 42; };
         }
 
     private:
@@ -98,10 +95,27 @@ namespace eld::util
 
 namespace eld
 {
-    template <typename ... FactoriesT>
+    template<typename... FactoriesT>
     struct specialize_builder_impl<util::builder_impl, FactoriesT...>
     {
         // TODO: handle deduction of real factories list
         using type = util::builder_impl<FactoriesT...>;
     };
-}
+}   // namespace eld
+
+#include "lasanga/generic/resolve_generic_class.h"
+
+namespace eld::generic
+{
+    template<template<typename...> class TGenericClassT,
+             typename... ModifiersT,
+             typename... DesignatedFactoriesT>
+    struct resolve_generic_class<builder<util::builder_impl<DesignatedFactoriesT...>>,
+                                 TGenericClassT,
+                                 ModifiersT...>
+    {
+        using builder_type = builder<util::builder_impl<DesignatedFactoriesT...>>;
+        using type = typename builder_type::template resolve_generic_class<TGenericClassT,
+                                                                           ModifiersT...>::type;
+    };
+}   // namespace eld::generic

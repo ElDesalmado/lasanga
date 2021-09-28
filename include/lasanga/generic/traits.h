@@ -11,12 +11,6 @@ namespace eld
 {
     namespace traits
     {
-        template <typename T>
-        struct get_alias_type_resolver
-        {
-            using type = typename T::alias_type_resolver;
-        };
-
         template<typename>
         struct type_list_size;
 

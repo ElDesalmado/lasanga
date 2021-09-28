@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 /**
+ * // TODO: move to utility?
  * Type tree utility.
  * Type tree is an n-ary type tree with node = tree_node<TGenericClassT, Types...>.
  *
@@ -16,7 +17,6 @@
 #include "lasanga/generic/traits.h"
 #include "lasanga/utility.h"
 #include "lasanga/utility/map_type_list.h"
-#include "lasanga/utility/tree_node.h"
 
 #include <type_traits>
 #include <utility>
@@ -119,13 +119,4 @@ namespace eld::generic
                                                      TResolveAliasTypeTT>::type;
     };
 
-    /*
-     * Given an unspecialized template TGenericClassT template,
-     * meta functions GetAliasListT and ResolveAliasTypeT,
-     * construct a type tree, where node_type = tree_node<TGenericClassT, SpecsT...>;
-     *
-     * while SpecsT == WrappedGenericTT
-     *   SpecsT = tree_node<SpecsT::TGenericClassT,
-     * ResolveAliasListT<SpecsT::TGenericClassT, GetAliasListT::type>...>
-     */
 }   // namespace eld::generic

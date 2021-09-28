@@ -114,8 +114,17 @@ struct dummy_build_impl
     }
 };
 
+using dummy_builder = eld::generic::builder<dummy_build_impl>;
+
+template<template<typename...> class TGenericClassT, typename... ModifiersT>
+struct eld::generic::resolve_generic_class<dummy_builder, TGenericClassT, ModifiersT...>
+{
+    using type = void;
+};
+
+// Layer-only specialization
 template<typename... ModifiersT>
-struct dummy_build_impl::resolve_generic_class<Layer, ModifiersT...>
+struct eld::generic::resolve_generic_class<dummy_builder, Layer, ModifiersT...>
 {
     using type = Layer<dummy_t<'A'>, dummy_t<'B'>, dummy_t<'C'>>;
 };
@@ -136,6 +145,7 @@ void example_builder()
 int main()
 {
     example_custom_builder();
+    example_builder();
 
     return 0;
 }
