@@ -87,10 +87,20 @@ namespace eld
         };
     }   // namespace generic
 
-    template <typename ImplT, typename ... ArgsT>
-    constexpr auto make_builder(ArgsT &&... args)
+    template<typename ImplT, typename... ArgsT>
+    constexpr auto make_builder(ArgsT &&...args)
     {
         return generic::builder<ImplT>(std::forward<ArgsT>(args)...);
+    }
+
+    template<template<typename...> class TGenericImplT, typename... ArgsT>
+    struct specialize_builder_impl;
+
+    template<template<typename...> class TImplT, typename... ArgsT>
+    constexpr auto make_builder(ArgsT &&...args)
+    {
+        using impl_type = typename specialize_builder_impl<TImplT, ArgsT...>::type;
+        return make_builder<impl_type>(std::forward<ArgsT>(args)...);
     }
 
 }   // namespace eld

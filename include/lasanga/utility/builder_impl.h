@@ -12,6 +12,8 @@ namespace eld::util
 {
     namespace detail
     {
+        // TODO: resolve factory
+
         template<template<typename...> class TGenericClassT,
                  typename ModifiersList,
                  typename FactoriesList>
@@ -30,6 +32,11 @@ namespace eld::util
             {
                 using type = void;
             };
+
+            /*
+             * TODO: get a type from filtered list of factories
+             *  filter: same Alias, DependsOnT, ModifiersT
+             */
 
             template<typename XAliasT,
                      template<typename...>
@@ -85,11 +92,16 @@ namespace eld::util
     };
 }   // namespace eld::util
 
+// TODO: eld::make_builder for util::builder_impl
+
 #include "lasanga/generic/builder.h"
 
 namespace eld
 {
-    template<template<typename...> class, typename... ArgsT>
-    constexpr auto make_builder(ArgsT &&...args);
-
+    template <typename ... FactoriesT>
+    struct specialize_builder_impl<util::builder_impl, FactoriesT...>
+    {
+        // TODO: handle deduction of real factories list
+        using type = util::builder_impl<FactoriesT...>;
+    };
 }

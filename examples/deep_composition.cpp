@@ -127,6 +127,12 @@ void example_custom_builder()
     layer.print();
 }
 
+void example_builder()
+{
+    auto builder = eld::make_builder<eld::util::builder_impl>();
+    (void)builder;
+}
+
 int main()
 {
     example_custom_builder();
