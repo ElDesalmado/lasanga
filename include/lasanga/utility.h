@@ -1,9 +1,8 @@
 ﻿#pragma once
 
-#include "lasanga/generic/construct_tree.h"
-#include "lasanga/utility/apply_predicates.h"
+#include "lasanga/utility/construct_tree.h"
 #include "lasanga/utility/convert_type_list.h"
-#include "lasanga/utility/map_type_list.h"
+#include "lasanga/utility/filter_type_list.h"
 
 #include <cstddef>
 #include <tuple>
@@ -14,27 +13,6 @@ namespace eld
 {
 //    namespace detail
 //    {
-//
-//
-//        template<template<typename...> class TOutputListT,
-//                 typename ListWrappedPredicatesT,
-//                 typename... Types>
-//        struct map_type_list;
-//
-//        template<template<typename...> class TOutputListT,
-//                 template<typename...>
-//                 class TTypeListT,
-//                 typename... WrappedPredicatesT,
-//                 typename... Types>
-//        struct map_type_list<TOutputListT, TTypeListT<WrappedPredicatesT...>, Types...>
-//        {
-//            using type = util::convert_type_list<
-//                decltype(std::tuple_cat(std::declval<std::conditional_t<
-//                                            util::apply_predicates<Types, WrappedPredicatesT...>::value,
-//                                            std::tuple<Types>,
-//                                            std::tuple<>>>()...)),
-//                TOutputListT>;
-//        };
 //
 //        template<typename TupleT,
 //                 typename ListWrappedPredicatesT,
@@ -134,7 +112,7 @@ namespace eld
 //        template<template<typename...> class TOutputListT, typename NameT, typename... FactoriesT>
 //        struct map_type_by_name
 //        {
-//            using type = typename map_type_list<TOutputListT, NameT, FactoriesT...>::type;
+//            using type = typename filter_type_list<TOutputListT, NameT, FactoriesT...>::type;
 //        };
 //
 //        template<template<typename...> class TOutputListT, typename NameT, typename... FactoriesT>

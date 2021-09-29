@@ -1,8 +1,5 @@
 ﻿#pragma once
 
-#include "lasanga/generic/resolve_generic_class.h"
-#include "lasanga/generic/specialize_tree.h"
-
 #include <type_traits>
 
 namespace eld::generic
@@ -33,6 +30,6 @@ namespace eld::generic
         using resolved_type =
             typename TResolveGenericClassTT<builder_type, TGenericClassT, ModifiersT...>::type;
 
-        return typename specialize_generic_class<resolved_type>::type(builder);
+        return resolved_type(builder);
     }
 }   // namespace eld::generic

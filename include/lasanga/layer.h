@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "lasanga/generic/traits.h"
+#include "lasanga/utility/traits.h"
 
 namespace eld
 {

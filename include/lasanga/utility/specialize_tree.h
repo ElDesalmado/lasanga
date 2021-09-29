@@ -1,11 +1,11 @@
 ﻿#pragma once
 
-#include "lasanga/generic/traits.h"
+#include "traits.h"
 
 #include <type_traits>
 #include <utility>
 
-namespace eld::generic
+namespace eld::util
 {
     /**
      * Fully specialize TGenericClassT class template given a Type tree with TTNodeTypeT root
@@ -30,7 +30,7 @@ namespace eld::generic
              typename... SpecTypesT>
     struct specialize_tree<TTNodeTypeT<TGenericClassT, SpecTypesT...>>
     {
-        using type = TGenericClassT<std::conditional_t<eld::traits::is_type_tree<SpecTypesT>::value,
+        using type = TGenericClassT<std::conditional_t<traits::is_type_tree<SpecTypesT>::value,
                                                        typename specialize_tree<SpecTypesT>::type,
                                                        SpecTypesT>...>;
     };

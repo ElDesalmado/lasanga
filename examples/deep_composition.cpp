@@ -58,9 +58,9 @@ public:
     template<typename BuilderT>
     constexpr explicit Layer(BuilderT &&builder)
       : a_(builder(
-            eld::d_name_tag<alias::A, ::Layer>())),   // :: is required due to ambiguous call error
-        b_(builder(eld::d_name_tag<alias::B, ::Layer>())),
-        c_(builder(eld::d_name_tag<alias::C, ::Layer>()))
+            eld::d_alias_tag<alias::A, ::Layer>())),   // :: is required due to ambiguous call error
+        b_(builder(eld::d_alias_tag<alias::B, ::Layer>())),
+        c_(builder(eld::d_alias_tag<alias::C, ::Layer>()))
     {
     }
 
@@ -89,26 +89,20 @@ struct dummy_t
 // example for custom builder implementation
 struct dummy_build_impl
 {
-    template<template<typename...> class TGenericClassT, typename... ModifiersT>
-    struct resolve_generic_class;
-
     template<typename... Modifiers, typename... ArgsT>
-    decltype(auto) construct(eld::d_name_t<alias::A, eld::wrapped_tt<Layer>, Modifiers...>,
-                             ArgsT &&...)
+    decltype(auto) construct(eld::d_alias_t<alias::A, Layer, Modifiers...>, ArgsT &&...)
     {
         return dummy_t<'A'>();
     }
 
     template<typename... Modifiers, typename... ArgsT>
-    decltype(auto) construct(eld::d_name_t<alias::B, eld::wrapped_tt<Layer>, Modifiers...>,
-                             ArgsT &&...)
+    decltype(auto) construct(eld::d_alias_t<alias::B, Layer, Modifiers...>, ArgsT &&...)
     {
         return dummy_t<'B'>();
     }
 
     template<typename... Modifiers, typename... ArgsT>
-    decltype(auto) construct(eld::d_name_t<alias::C, eld::wrapped_tt<Layer>, Modifiers...>,
-                             ArgsT &&...)
+    decltype(auto) construct(eld::d_alias_t<alias::C, Layer, Modifiers...>, ArgsT &&...)
     {
         return dummy_t<'C'>();
     }
@@ -138,8 +132,14 @@ void example_custom_builder()
 
 void example_builder()
 {
-    auto builder = eld::make_builder<eld::util::builder_impl>();
-    (void)builder;
+    auto builder = eld::make_builder<eld::util::builder_impl>(
+        eld::d_named_factory<alias::A, Layer>([]() { return dummy_t<'A'>(); }),
+        eld::d_named_factory<alias::B, Layer>([]() { return dummy_t<'B'>(); }),
+        eld::d_named_factory<alias::C, Layer>([]() { return dummy_t<'C'>(); })
+    );
+
+    auto layer = eld::make_lasanga<Layer>(builder);
+    layer.print();
 }
 
 int main()

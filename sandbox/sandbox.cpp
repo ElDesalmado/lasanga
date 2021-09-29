@@ -34,11 +34,11 @@
  *
  * // build by name
  * template <typename>
- * struct name_t{};
+ * struct alias_t{};
  *
  * // build by template name. Template NameTag can be used to overload a get<NameTag> function
  * template <template <typename...> class>
- * struct name_tt{};
+ * struct alias_tt{};
  *
  * // TODO: (?) generic template tag to distinguish between template and template template
  *
@@ -63,11 +63,11 @@
  * public:
  *   template <typename BuilderT>
  *   Layer(BuilderT &&builder)
- *      : a_(builder(name_t<NameA>()), // A must be deduced from Builder in make_layer, only by
+ *      : a_(builder(alias_t<NameA>()), // A must be deduced from Builder in make_layer, only by
  * NameA tag
  *        b_(builder(dname_t<Layer, NameB>()), // B must be deduced from Builder in make_layer.
  * Builder will use Layer and NameB tag to deduce B if specified, otherwise will use just NameB tag
- *        c_(builder(name_t<NameC>()), // C must be deduced from Builder in make_layer, only by
+ *        c_(builder(alias_t<NameC>()), // C must be deduced from Builder in make_layer, only by
  * NameC tag
  *        nt_(builder(build_t<NonTemplate>()) // does not need to be deduced, Builder must contain a
  * designated factory

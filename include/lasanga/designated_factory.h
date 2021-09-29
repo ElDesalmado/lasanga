@@ -1,21 +1,27 @@
 ﻿#pragma once
 
 #include "lasanga/tags.h"
-#include "lasanga/generic/traits.h"
+#include "lasanga/utility/traits.h"
+
+#include <type_traits>
+#include <utility>
 
 namespace eld
 {
-    // TODO: designated factory with multiple callable types?
+    // TODO: designated factory with multiple callables (unique types)?
     template<typename CallableT,
              typename ValueTypeT,
              typename AliasTagT = eld::tag::unnamed,
-             typename DependsOnT = eld::tag::unnamed>
+             template<typename...> class TDependsOnT = eld::tag::unnamed_t>
     class designated_factory
     {
     public:
+        // TODO: clarify factory traits
         using value_type = ValueTypeT;
         using alias_tag = AliasTagT;
-        using depends_on_type = DependsOnT;
+
+        template<typename... T>
+        using depends_on_type = TDependsOnT<T...>;
 
         template<
             bool DefaultConstructible = std::is_destructible_v<CallableT>,
@@ -33,7 +39,11 @@ namespace eld
         {
         }
 
-        decltype(auto) operator()() { return factory_(); }
+        template<typename... ArgsT>
+        decltype(auto) operator()(ArgsT &&...args)
+        {
+            return factory_(std::forward<ArgsT>(args)...);
+        }
 
     private:
         CallableT factory_;
@@ -44,10 +54,10 @@ namespace eld
     {
         using callable_type = std::decay_t<Callable>;
         using constructed_type = decltype(std::declval<callable_type>()());
-        static_assert(!traits::is_tuple<constructed_type>(),
+        static_assert(!util::traits::is_tuple<constructed_type>(),
                       "Factories that construct tuples are not allowed. Use special overload and "
                       "explicitly specify constructed type");
-        return eld::designated_factory<std::decay_t<Callable>, constructed_type>(
+        return designated_factory<std::decay_t<Callable>, constructed_type>(
             std::forward<Callable>(callable));
     }
 
@@ -63,17 +73,19 @@ namespace eld
         return wrap_factory<std::decay_t<decltype(fPtr)>>(std::move(fPtr));
     }
 
-    template<typename NameTag, typename Callable>
+    // TODO: only one signature to create named_factory? (remove d_named_factory)
+
+    template<typename NameTagT, typename Callable>
     constexpr auto named_factory(Callable &&callable)
     {
-        static_assert(!std::is_same_v<NameTag, tag::unnamed>, "NamedTag must not be unnamed.");
+        static_assert(!std::is_same_v<NameTagT, tag::unnamed>, "NamedTag must not be unnamed.");
 
         using callable_type = std::decay_t<Callable>;
         using constructed_type = decltype(std::declval<callable_type>()());
-        static_assert(!traits::is_tuple<constructed_type>(),
+        static_assert(!util::traits::is_tuple<constructed_type>(),
                       "Factories that construct tuples are not allowed. Use special overload and "
                       "explicitly specify constructed type");
-        return eld::designated_factory<std::decay_t<Callable>, constructed_type, NameTag>(
+        return designated_factory<std::decay_t<Callable>, constructed_type, NameTagT>(
             std::forward<Callable>(callable));
     }
 
@@ -86,7 +98,7 @@ namespace eld
     template<template<typename...> class NameTagT, typename Callable>
     constexpr auto named_factory(Callable &&callable)
     {
-        static_assert(!traits::is_same_tt<NameTagT, tag::unnamed_t>::value,
+        static_assert(!util::traits::is_same_tt<NameTagT, tag::unnamed_t>::value,
                       "Template NamedTag must not be unspecified.");
 
         return named_factory<wrapped_tt<NameTagT>, std::decay_t<Callable>>(
@@ -111,57 +123,18 @@ namespace eld
         return named_factory<NameTagT, std::decay_t<decltype(fPtr)>>(std::move(fPtr));
     }
 
-    template<typename NameTagT, typename DependsOnT, typename Callable>
-    constexpr auto d_named_factory(Callable &&callable)
-    {
-        static_assert(!std::is_same_v<NameTagT, tag::unnamed>, "NamedTag must not be unnamed.");
-        // TODO: check DependOnT is valid
-
-        using callable_type = std::decay_t<Callable>;
-        using constructed_type = decltype(std::declval<callable_type>()());
-        static_assert(!traits::is_tuple<constructed_type>(),
-                      "Factories that construct tuples are not allowed. Use special overload and "
-                      "explicitly specify constructed type");
-        return eld::designated_factory<callable_type, constructed_type, NameTagT, DependsOnT>(
-            std::forward<Callable>(callable));
-    }
-
-    template<typename NameTagT, typename DependsOnT, typename Callable>
-    constexpr auto d_named_factory()
-    {
-        return d_named_factory<NameTagT, DependsOnT>(Callable());
-    }
-
-    template<typename NameTagT, typename DependsOnT, typename ConstructedT>
-    constexpr auto d_named_factory(ConstructedT (*pFunction)())
-    {
-        return d_named_factory<NameTagT, DependsOnT, std::decay_t<decltype(pFunction)>>(
-            std::move(pFunction));
-    }
-
-    template<template<typename...> class TNameTagT, typename DependsOnT, typename Callable>
-    constexpr auto d_named_factory(Callable &&callable)
-    {
-        return d_named_factory<wrapped_tt<TNameTagT>, DependsOnT>(std::forward<Callable>(callable));
-    }
-
-    template<template<typename...> class TNameTagT, typename DependsOnT, typename Callable>
-    constexpr auto d_named_factory()
-    {
-        return d_named_factory<TNameTagT, DependsOnT>(Callable());
-    }
-
-    template<template<typename...> class TNameTagT, typename DependsOnT, typename ConstructedT>
-    constexpr auto d_named_factory(ConstructedT (*pFunction)())
-    {
-        return d_named_factory<TNameTagT, DependsOnT, std::decay_t<decltype(pFunction)>>(
-            std::move(pFunction));
-    }
-
     template<typename NameTagT, template<typename...> class TDependsOnT, typename Callable>
     constexpr auto d_named_factory(Callable &&callable)
     {
-        return d_named_factory<NameTagT, wrapped_tt<TDependsOnT>>(std::forward<Callable>(callable));
+        static_assert(!std::is_same_v<NameTagT, tag::unnamed>, "NamedTag must not be unnamed.");
+
+        using callable_type = std::decay_t<Callable>;
+        using constructed_type = decltype(std::declval<callable_type>()());
+        static_assert(!util::traits::is_tuple<constructed_type>(),
+                      "Factories that construct tuples are not allowed. Use special overload and "
+                      "explicitly specify constructed type");
+        return designated_factory<callable_type, constructed_type, NameTagT, TDependsOnT>(
+            std::forward<Callable>(callable));
     }
 
     template<typename NameTagT, template<typename...> class TDependsOnT, typename Callable>
@@ -183,23 +156,19 @@ namespace eld
              typename Callable>
     constexpr auto d_named_factory(Callable &&callable)
     {
-        return d_named_factory<wrapped_tt<TNameTagT>, wrapped_tt<TDependsOnT>>(
+        return d_named_factory<wrapped_tt<TNameTagT>, TDependsOnT>(
             std::forward<Callable>(callable));
     }
 
-    template<template<typename...> class TNameTagT,
-             template<typename...>
-             class TDependsOnT,
-             typename Callable>
+    template<template<typename...> class TNameTagT, template<typename...>
+                                                    class TDependsOnT, typename Callable>
     constexpr auto d_named_factory()
     {
         return d_named_factory<TNameTagT, TDependsOnT>(Callable());
     }
 
-    template<template<typename...> class TNameTagT,
-             template<typename...>
-             class TDependsOnT,
-             typename ConstructedT>
+    template<template<typename...> class TNameTagT, template<typename...>
+                                                    class TDependsOnT, typename ConstructedT>
     constexpr auto d_named_factory(ConstructedT (*pFunction)())
     {
         return d_named_factory<TNameTagT, TDependsOnT, std::decay_t<decltype(pFunction)>>(

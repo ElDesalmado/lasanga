@@ -30,48 +30,24 @@ namespace eld
             }
 
             template<typename NameTagT,
-                     typename DependsOnT,
+                     template <typename...> class TDependsOnT,
                      typename... Modifiers,
                      typename... ArgsT>
-            decltype(auto) operator()(d_name_t<NameTagT, DependsOnT, Modifiers...> dNameTag,
+            decltype(auto) operator()(d_alias_t<NameTagT, TDependsOnT, Modifiers...> dNameTag,
                                       ArgsT &&...args)
             {
                 return impl_.construct(dNameTag, std::forward<ArgsT>(args)...);
             }
 
             template<template<typename...> class TAliasTagT,
-                     typename DependsOnT,
-                     typename... Modifiers,
-                     typename... ArgsT>
-            decltype(auto) operator()(eld::d_name_tt<TAliasTagT, DependsOnT, Modifiers...>,
-                                      ArgsT &&...args)
-            {
-                return (*this)(d_name_t<wrapped_tt<TAliasTagT>, DependsOnT, Modifiers...>(),
-                               std::forward<ArgsT>(args)...);
-            }
-
-            template<typename AliasTagT,
                      template<typename...>
                      class TDependsOnT,
                      typename... ModifiersT,
                      typename... ArgsT>
-            decltype(auto) operator()(eld::dt_name_t<AliasTagT, TDependsOnT, ModifiersT...>,
+            decltype(auto) operator()(eld::d_alias_tt<TAliasTagT, TDependsOnT, ModifiersT...>,
                                       ArgsT &&...args)
             {
-                return (*this)(d_name_t<AliasTagT, wrapped_tt<TDependsOnT>, ModifiersT...>(),
-                               std::forward<ArgsT>(args)...);
-            }
-
-            template<template<typename...> class TAliasTagT,
-                     template<typename...>
-                     class TDependsOnT,
-                     typename... ModifiersT,
-                     typename... ArgsT>
-            decltype(auto) operator()(eld::dt_name_tt<TAliasTagT, TDependsOnT, ModifiersT...>,
-                                      ArgsT &&...args)
-            {
-                return (*this)(
-                    d_name_t<wrapped_tt<TAliasTagT>, wrapped_tt<TDependsOnT>, ModifiersT...>(),
+                return (*this)(d_alias_t<wrapped_tt<TAliasTagT>, TDependsOnT, ModifiersT...>(),
                     std::forward<ArgsT>(args)...);
             }
 

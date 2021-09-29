@@ -7,7 +7,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace eld
+namespace eld::util
 {
     namespace traits
     {
@@ -18,6 +18,22 @@ namespace eld
         struct type_list_size<TTypeListT<Types...>>
         {
             constexpr static size_t value = sizeof...(Types);
+        };
+
+        template<size_t, typename>
+        struct element_type;
+
+        template<size_t Indx, template<typename...> class TTypeListT, typename... Types>
+        struct element_type<Indx, TTypeListT<Types...>>
+        {
+            using type = std::tuple_element_t<Indx, std::tuple<Types...>>;
+        };
+
+        // TODO: Should I allow this?
+        template<size_t Indx, template<typename...> class TTypeListT>
+        struct element_type<Indx, TTypeListT<>>
+        {
+            using type = tag::not_found;
         };
 
         template<typename>

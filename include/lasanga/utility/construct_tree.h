@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 /**
- * // TODO: move to utility?
  * Type tree utility.
  * Type tree is an n-ary type tree with node = tree_node<TGenericClassT, Types...>.
  *
@@ -14,17 +13,18 @@
  *
  */
 
-#include "lasanga/generic/traits.h"
-#include "lasanga/utility.h"
-#include "lasanga/utility/map_type_list.h"
+#include "traits.h"
 
 #include <type_traits>
 #include <utility>
 
-namespace eld::generic
+namespace eld::util
 {
     namespace detail
     {
+        template <typename...>
+        struct type_list;
+
         template<template<typename...> class>
         struct wrapped_generic_t;
 
@@ -48,7 +48,10 @@ namespace eld::generic
                  class TResolveAliasTypeTT,
                  typename AliasListT =
                      typename TGetAliasListTT<WrappedGenericClassTT, ModifiersListT>::type>
-        struct construct_tree;
+        struct construct_tree
+        {
+            using type = WrappedGenericClassTT;
+        };
 
         template<template<typename...> class TGenericClassT,
                  typename... ModifiersT,
@@ -63,10 +66,10 @@ namespace eld::generic
                           typename... /*ModifiersT*/>
                  class TResolveAliasTypeTT>
         struct construct_tree<TWrapperT<TGenericClassT>,
-                              util::type_list<ModifiersT...>,
+                              detail::type_list<ModifiersT...>,
                               TGetAliasListTT,
                               TResolveAliasTypeTT,
-                              util::type_list<AliasesT...>>
+                              detail::type_list<AliasesT...>>
         {
             template<typename XTWrappedAliasT>
             using resolve_type =
@@ -74,7 +77,7 @@ namespace eld::generic
 
             template<typename TWrappedGenericClassT>
             using construct_recursive = typename construct_tree<TWrappedGenericClassT,
-                                                                util::type_list<ModifiersT...>,
+                                                                detail::type_list<ModifiersT...>,
                                                                 TGetAliasListTT,
                                                                 TResolveAliasTypeTT>::type;
             using type =
@@ -107,14 +110,14 @@ namespace eld::generic
 
         template<template<typename...> class XTGenericClassT, typename... XModifiersT>
         struct wrapp_get_alias_list<detail::wrapped_tt<XTGenericClassT>,
-                                    util::type_list<XModifiersT...>>
+                                    detail::type_list<XModifiersT...>>
         {
             using type = typename TGetAliasListTT<XTGenericClassT, XModifiersT...>::type;
         };
 
     public:
         using type = typename detail::construct_tree<detail::wrapped_tt<TGenericClassT>,
-                                                     util::type_list<ModifiersT...>,
+                                                     detail::type_list<ModifiersT...>,
                                                      wrapp_get_alias_list,
                                                      TResolveAliasTypeTT>::type;
     };

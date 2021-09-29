@@ -1,12 +1,14 @@
 ﻿
-#include "lasanga/generic/construct_tree.h"
-#include "lasanga/generic/specialize_tree.h"
+#include "lasanga/utility/construct_tree.h"
+#include "lasanga/utility/specialize_tree.h"
 
-#include "lasanga/generic/traits.h"
 #include "lasanga/lasanga.h"
+#include "lasanga/utility/traits.h"
 
 #include <iostream>
 #include <string>
+
+// TODO: move it to tests, convert to gtest TESTS
 
 std::string constructed;
 
@@ -92,12 +94,12 @@ int main()
     std::cout << constructed << std::endl;
     constructed.clear();
 
-    eld::generic::specialize_tree<
+    specialize_tree<
         type_node<GenericRoot, Letter<'A'>, Letter<'B'>, Letter<'C'>, Letter<'D'>>>::type();
     std::cout << constructed << std::endl;
     constructed.clear();
 
-    using nested_type = eld::generic::specialize_tree<
+    using nested_type = specialize_tree<
         type_node<GenericRoot,
                   type_node<GenericRoot,
                             Letter<'A', 1>,

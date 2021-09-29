@@ -24,11 +24,10 @@ namespace eld
 
         template<typename...>
         struct unnamed_t;
-    }
+    }   // namespace tag
 
     constexpr inline tag::not_found not_found;
     constexpr tag::default_call default_call_tag;
-
 
     /**
      * Wrapper type to store unspecialized template class (for example, within a type_list)
@@ -42,7 +41,7 @@ namespace eld
      * Builder tag. Used to construct an object by NameTag
      */
     template<typename>
-    struct name_t
+    struct alias_t
     {
     };
 
@@ -51,53 +50,38 @@ namespace eld
      * can be used to overload a get<NameTag> function
      */
     template<template<typename...> class>
-    struct name_tt
+    struct alias_tt
     {
     };
 
     /**
-     * Helper function to deduce name_t or name_tt
+     * Helper function to deduce alias_t or alias_tt
      */
     template<typename NonT>
-    constexpr name_t<NonT> name_tag()
+    constexpr alias_t<NonT> alias_tag()
     {
         return {};
     }
 
     /**
-     * Helper function to deduce name_t or name_tt
+     * Helper function to deduce alias_t or alias_tt
      */
     template<template<typename...> class TT>
-    constexpr name_tt<TT> name_tag()
+    constexpr alias_tt<TT> alias_tag()
     {
         return {};
     }
-
-    /**
-     * Build tag. Using DependentName to specialize an object to build by NameTag.
-     * @tparam DependsOnT NameTag or a typename of a class that an object depends on.
-     * @tparam NameTagT
-     */
-    template<typename NameTagT, typename DependsOnT, typename...>
-    struct d_name_t
-    {
-    };
-
-    template<template<typename...> class TNameTagT, typename DependsOnT, typename... Modifiers>
-    struct d_name_tt
-    {
-    };
 
     /**
      * Builder tag. Used to construct an object within a TGenericClassT by NameTag and a set of
      * ModifiersT
      * @tparam TDependsOnT Unspecialized template class that owns an object to be constructed.
-     * @tparam NameTagT Tag designated a name for a type.
+     * @tparam AliasTagT Tag designated a name for a type.
      * @tparam Modifiers A set of modifiers. Can be used to held in distinguishing between different
      * contexts and TDependsOnT'es
      */
-    template<typename NameTagT, template<typename...> class TDependsOnT, typename... Modifiers>
-    struct dt_name_t
+    template<typename AliasTagT, template<typename...> class TDependsOnT, typename... Modifiers>
+    struct d_alias_t
     {
     };
 
@@ -105,47 +89,28 @@ namespace eld
              template<typename...>
              class TDependsOnT,
              typename... Modifiers>
-    struct dt_name_tt
+    struct d_alias_tt
     {
     };
-
-    /**
-     * Helper function to resolve between typename and template DependentName
-     * @tparam DependsOnT
-     * @tparam NameTag
-     * @tparam Modifiers
-     * @return
-     */
-    template<typename NameTagT, typename DependsOnT, typename...>
-    constexpr d_name_t<NameTagT, DependsOnT> d_name_tag()
-    {
-        return {};
-    }
-
-    template<template<typename...> class TNameTagT, typename DependsOnT, typename... Modifiers>
-    constexpr d_name_tt<TNameTagT, DependsOnT, Modifiers...> d_name_tag()
-    {
-        return {};
-    }
 
     /**
      * Helper function to resolve between typename and template DependentName
      * @tparam TDependsOnT
-     * @tparam NameTagT
+     * @tparam AliasTagT
      * @tparam Modifiers
      * @return
      */
-    template<typename NameTagT, template<typename...> class TDependsOnT, typename... Modifiers>
-    constexpr dt_name_t<NameTagT, TDependsOnT, Modifiers...> d_name_tag()
+    template<typename AliasTagT, template<typename...> class TDependsOnT, typename... Modifiers>
+    constexpr d_alias_t<AliasTagT, TDependsOnT, Modifiers...> d_alias_tag()
     {
         return {};
     }
 
-    template<template<typename...> class TNameTagT,
+    template<template<typename...> class TAliasTagT,
              template<typename...>
              class TDependsOnT,
              typename... Modifiers>
-    constexpr dt_name_tt<TNameTagT, TDependsOnT, Modifiers...> d_name_tag()
+    constexpr d_alias_tt<TAliasTagT, TDependsOnT, Modifiers...> d_alias_tag()
     {
         return {};
     }
@@ -170,7 +135,7 @@ namespace eld
     };
 
     /**
-     * Helper function to deduce name_t or name_tt
+     * Helper function to deduce alias_t or alias_tt
      */
     template<typename NonT>
     constexpr build_t<NonT> build_tag()
@@ -179,11 +144,11 @@ namespace eld
     }
 
     /**
-     * Helper function to deduce name_t or name_tt
+     * Helper function to deduce alias_t or alias_tt
      */
     template<template<typename...> class TT>
     constexpr build_tt<TT> build_tag()
     {
         return {};
     }
-}
+}   // namespace eld

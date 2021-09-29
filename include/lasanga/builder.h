@@ -1,49 +1,15 @@
 ﻿#pragma once
 
 #include "lasanga/generic/resolve_generic_class.h"
-#include "lasanga/generic/traits.h"
 #include "lasanga/tags.h"
 #include "lasanga/utility.h"
+#include "lasanga/utility/traits.h"
 
 #include <type_traits>
 #include <utility>
 
 namespace eld
 {
-    namespace traits
-    {
-        template<size_t, typename>
-        struct element_type;
-
-        template<size_t Indx, template<typename...> class TTypeListT, typename... Types>
-        struct element_type<Indx, TTypeListT<Types...>>
-        {
-            using type = std::tuple_element_t<Indx, std::tuple<Types...>>;
-        };
-
-        // TODO: Should I allow this?
-        template<size_t Indx, template<typename...> class TTypeListT>
-        struct element_type<Indx, TTypeListT<>>
-        {
-            using type = tag::not_found;
-        };
-
-    }   // namespace traits
-
-
-
-    /**
-     * Create an object of a class TGenericClassT using a Builder.
-     * @tparam T
-     * @tparam Builder
-     * @param builder
-     * @return
-     */
-    template<typename T, typename Builder>
-    constexpr auto make_lasanga(Builder &&builder)
-    {
-        return T(builder);
-    }
 
     /**
      * Generic Builder class.
@@ -51,9 +17,9 @@ namespace eld
      * One tag type (build, name, d_name) specialization allows construction of only one type of
      * object.
      * - using build_t: will build an object of typename
-     * - using name_t and name_tt: will build an object that is registered with the given alias
+     * - using alias_t and alias_tt: will build an object that is registered with the given alias
      * - using d_name_t and d_name_tt: will try to build an object using a dependent name. If no
-     * dependent name is registered, will fall back to name_t or name_tt
+     * dependent name is registered, will fall back to alias_t or alias_tt
      *
      * Type tree for specialization:
      * Given a root template class, builder will use root's name_list to recursively create a type
@@ -84,16 +50,16 @@ namespace eld
         decltype(auto) operator()(eld::build_t<T> buildTag)
         {
             auto mappedTuple =
-                util::map_tuple<util::wrapped_predicate<traits::is_unnamed>,
+                util::map_tuple<util::wrapped_predicate<util::traits::is_unnamed>,
                                 util::wrapped_predicate<same_type, T>>(designatedFactories_);
 
             return construct(buildTag, mappedTuple);
         }
 
         template<typename NameTagT>
-        decltype(auto) operator()(eld::name_t<NameTagT>)
+        decltype(auto) operator()(eld::alias_t<NameTagT>)
         {
-            auto mappedTuple = util::map_tuple<util::wrapped_predicate<traits::is_named_factory>,
+            auto mappedTuple = util::map_tuple<util::wrapped_predicate<util::traits::is_named_factory>,
                                                util::wrapped_predicate<same_name_tag, NameTagT>>(
                 designatedFactories_);
             return construct(mappedTuple);
@@ -105,14 +71,14 @@ namespace eld
          * @return
          */
         template<template<typename...> class TNameTagT>
-        decltype(auto) operator()(eld::name_tt<TNameTagT>)
+        decltype(auto) operator()(eld::alias_tt<TNameTagT>)
         {
-            return (*this)(eld::name_t<eld::wrapped_tt<TNameTagT>>());
+            return (*this)(eld::alias_t<eld::wrapped_tt<TNameTagT>>());
         }
 
         /**
          * Build using dependent name tag. Will first try to find a designated factory with
-         * requested DependsOnT. Will fall back to name_t if not found.
+         * requested DependsOnT. Will fall back to alias_t if not found.
          * @tparam DependsOnT
          * @tparam NameTagT
          * @tparam ...
@@ -123,7 +89,7 @@ namespace eld
         decltype(auto) operator()(eld::d_name_t<NameTagT, DependsOnT> dNameTag)
         {
             auto mappedTupleFactories =
-                util::map_tuple<util::wrapped_predicate<traits::is_dependent>,
+                util::map_tuple<util::wrapped_predicate<util::traits::is_dependent>,
                                 util::wrapped_predicate<same_depends_on, DependsOnT>>(
                     designatedFactories_);
 
@@ -138,7 +104,7 @@ namespace eld
         }
 
         template<typename NameTagT, template<typename...> class TDependsOnT, typename... Modifiers>
-        decltype(auto) operator()(eld::dt_name_t<NameTagT, TDependsOnT, Modifiers...>)
+        decltype(auto) operator()(eld::d_alias_t<NameTagT, TDependsOnT, Modifiers...>)
         {
             return (*this)(eld::d_name_t<NameTagT, eld::wrapped_tt<TDependsOnT>, Modifiers...>());
         }
@@ -147,7 +113,7 @@ namespace eld
                  template<typename...>
                  class TDependsOnT,
                  typename... Modifiers>
-        decltype(auto) operator()(eld::dt_name_tt<TNameTagT, TDependsOnT, Modifiers...>)
+        decltype(auto) operator()(eld::d_alias_tt<TNameTagT, TDependsOnT, Modifiers...>)
         {
             return (*this)(
                 eld::d_name_t<eld::wrapped_tt<TNameTagT>, eld::wrapped_tt<TDependsOnT>, Modifiers...>());
@@ -155,13 +121,13 @@ namespace eld
 
     private:
         template<typename FactoryT, typename NameTag>
-        using same_name_tag = std::is_same<traits::name_tag<FactoryT>, NameTag>;
+        using same_name_tag = std::is_same<util::traits::name_tag<FactoryT>, NameTag>;
 
         template<typename FactoryT, typename Type>
         using same_type = std::is_same<traits::value_type<FactoryT>, Type>;
 
         template<typename FactoryT, typename DependsOnT>
-        using same_depends_on = std::is_same<traits::depends_on_type<FactoryT>, DependsOnT>;
+        using same_depends_on = std::is_same<util::traits::depends_on_type<FactoryT>, DependsOnT>;
 
         template<typename T, typename... Factories>
         decltype(auto) construct(eld::build_t<T>, std::tuple<Factories &...> tupleFactories)
@@ -173,7 +139,7 @@ namespace eld
         decltype(auto) construct(eld::build_t<T>, std::tuple<>)
         {
             auto mappedTuple =
-                util::map_tuple<util::wrapped_predicate<traits::is_named_factory>,
+                util::map_tuple<util::wrapped_predicate<util::traits::is_named_factory>,
                                 util::wrapped_predicate<same_type, T>>(designatedFactories_);
             return construct(mappedTuple);
         }
@@ -188,7 +154,7 @@ namespace eld
         template<typename NameTagT, typename DependsOnT>
         decltype(auto) construct(eld::d_name_t<NameTagT, DependsOnT>, std::tuple<>)
         {
-            return (*this)(eld::name_t<NameTagT>());
+            return (*this)(eld::alias_t<NameTagT>());
         }
 
         template<typename... FoundFactories>

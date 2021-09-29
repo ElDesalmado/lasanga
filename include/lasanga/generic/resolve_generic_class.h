@@ -11,9 +11,5 @@ namespace eld::generic
      */
     template<typename BuilderT, template<typename...> class TGenericClassT, typename... ModifiersT>
     struct resolve_generic_class;
-//    {
-//        using builder_type = BuilderT;
-//        using type = typename builder_type::template resolve_generic_class<TGenericClassT,
-//                                                                           ModifiersT...>::type;
-//    };
+
 }   // namespace eld::generic

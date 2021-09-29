@@ -3,6 +3,7 @@
 // generic headers
 #include "lasanga/generic/builder.h"
 #include "lasanga/generic/lasanga.h"
+#include "lasanga/designated_factory.h"
 
 // default implementations
 #include "lasanga/alias_list.h"
@@ -10,7 +11,6 @@
 
 //#include "lasanga/builder.h"
 //#include "lasanga/custom_override.h"
-//#include "lasanga/designated_factory.h"
 //#include "lasanga/generic/traits.h"
 //#include "lasanga/layer.h"
 
@@ -77,7 +77,7 @@ namespace eld
     //             * - if not found any search unnamed
     //             */
     //            // TODO: map type list: same depends_on_type and alias_tag or same alias_tag
-    //            using type_list = util::map_type_list_disjunction<TFactoriesListT>;
+    //            using type_list = util::filter_type_list_disjunction<TFactoriesListT>;
     //
     //            static_assert(util::type_list_size<type_list>::value != 0,
     //                          "Failed to find a factory by name tag!");
@@ -131,6 +131,18 @@ namespace eld
     //
     //    }   // namespace detail
 
+    /**
+     * Create an object of a class TGenericClassT using a Builder.
+     * @tparam T
+     * @tparam Builder
+     * @param builder
+     * @return
+     */
+    template<typename T, typename Builder>
+    constexpr auto make_lasanga(Builder &&builder)
+    {
+        return T(builder);
+    }
 
     template<template<typename...> class TGenericClassT, typename... ModifiersT, typename BuilderT>
     constexpr auto make_lasanga(BuilderT &&builder)
