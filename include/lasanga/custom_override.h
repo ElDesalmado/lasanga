@@ -2,6 +2,8 @@
 
 #include "lasanga/utility/traits.h"
 
+// TODO: remove this or fix?
+
 namespace eld
 {
     namespace detail
@@ -60,14 +62,14 @@ namespace eld
             obj,
             std::forward_as_tuple(std::forward<ArgsT>(args)...),
             std::make_index_sequence<sizeof...(ArgsT) - 1>(),   // do not index callable
-            traits::is_complete<signature_type>());
+            util::traits::is_complete<signature_type>());
     }
 
     template<template<typename...> class SignatureTag, typename... U, typename T, typename... ArgsT>
     constexpr decltype(auto) invoke(T &&obj, ArgsT &&...args)
     {
         using signature_type = SignatureTag<std::decay_t<T>, U...>;
-        static_assert(traits::is_complete<signature_type>(), "Signature tag is not implemented!");
+        static_assert(util::traits::is_complete<signature_type>(), "Signature tag is not implemented!");
 
         return detail::invoke_by_signature<signature_type>(obj, std::forward<ArgsT>(args)...);
     }

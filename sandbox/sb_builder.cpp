@@ -14,7 +14,7 @@ struct NonTemplate
     void speak() { std::cout << "NonTemplate" << std::endl; }
 };
 
-// This part should be defined in user's generic/layer.h header
+// This part should be defined in user's generic/Layer.h header
 
 namespace alias
 {

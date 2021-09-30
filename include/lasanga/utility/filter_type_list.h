@@ -1,13 +1,26 @@
 ﻿#pragma once
 
-#include "lasanga/utility/convert_type_list.h"
-
 #include <tuple>
 #include <type_traits>
 #include <utility>
 
 namespace eld::util
 {
+    namespace detail
+    {
+        template<typename FromT, template<typename...> class TToT>
+        struct convert_type_list;
+
+        template<template<typename...> class TFromT,
+                 typename... TypesT,
+                 template<typename...>
+                 class TToT>
+        struct convert_type_list<TFromT<TypesT...>, TToT>
+        {
+            using type = TToT<TypesT...>;
+        };
+    }
+
     template<template<typename...> class TLogicalT,
              typename TTypeListT,
              template<typename>
@@ -25,7 +38,7 @@ namespace eld::util
         template <typename T>
         using logical_value_type = TLogicalT<TPredicatesTT<T>...>;
 
-        using type = typename convert_type_list<
+        using type = typename detail::convert_type_list<
             decltype(std::tuple_cat(
                 std::declval<std::conditional_t<logical_value_type<TypesT>::value,
                                                 std::tuple<TypesT>,

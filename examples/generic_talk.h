@@ -5,7 +5,7 @@
  * builder.
  */
 
-#include "lasanga/builder.h"
+#include "lasanga/lasanga.h"
 
 #include <iostream>
 

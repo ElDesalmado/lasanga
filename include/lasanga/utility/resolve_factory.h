@@ -9,55 +9,40 @@ namespace eld::util
 {
     namespace detail
     {
-        template<typename AliasAT, typename AliasBT>
-        struct same_alias : std::is_same<AliasAT, AliasBT>
-        {
-        };
+        template <typename AT, typename BT>
+        struct same_wrapped_tt : std::is_same<AT, BT> {};
 
-        template<template<typename...> class TAliasATT,
-                 template<typename...>
-                 class TAliasBTT,
-                 template<template<typename...> class>
-                 class TWrapperATT,
-                 template<template<typename...> class>
-                 class TWrapperBTT>
-        struct same_alias<TWrapperATT<TAliasATT>, TWrapperBTT<TAliasBTT>> :
-          traits::is_same_tt<TAliasATT, TAliasBTT>
-        {
-        };
-
-        template<template<typename...> class TDependsOnAT, template<typename...> class TDependsOnBT>
-        struct same_depends_on : traits::is_same_tt<TDependsOnAT, TDependsOnBT>
-        {
-        };
+        template <template <typename...> class TAT,
+                 template <typename...> class TBT,
+                 template <template <typename...> class> class TWrappedATT,
+                 template <template <typename...> class> class TWrappedBTT>
+        struct same_wrapped_tt<TWrappedATT<TAT>, TWrappedBTT<TBT>> : traits::is_same_tt<TAT, TBT>{};
     }   // namespace detail
 
     /**
-         * Resolve a designated factory by Alias, TGenericClassT and a set of modifiers.
-         * @tparam AliasT
-         * @tparam TGenericClassT
-         * @tparam ListFactoriesT
-         * @tparam ListModifiersT
+     * Resolve a designated factory by Alias, TGenericClassT and a set of modifiers.
+     * @tparam AliasT
+     * @tparam TGenericClassT
+     * @tparam ListFactoriesT
+     * @tparam ListModifiersT
      */
     template<typename AliasT,
-             template<typename...>
-             class TGenericClassT,
+             typename DependsOnT,
              typename ListFactoriesT,
              typename ListModifiersT>
     class resolve_factory
     {
         template<typename FactoryT>
-        using same_alias = detail::same_alias<typename FactoryT::alias_tag, AliasT>;
+        using same_alias_t = detail::same_wrapped_tt<typename FactoryT::alias_tag, AliasT>;
 
         template<typename FactoryT>
-        using same_generic_class =
-            detail::same_depends_on<TGenericClassT, FactoryT::template depends_on_type>;
+        using same_depends_on_t =
+            detail::same_wrapped_tt<typename FactoryT::depends_on_type, DependsOnT>;
 
         // TODO: implement
-        using filtered_type_list =
-            typename filter_type_list_conjunction<ListFactoriesT,
-                                                  same_alias,
-                                                  same_generic_class>::type;
+        using filtered_type_list = typename filter_type_list_conjunction<ListFactoriesT,
+                                                                         same_alias_t,
+                                                                         same_depends_on_t>::type;
 
         static_assert(traits::type_list_size<filtered_type_list>::value <= 1,
                       "Multiple designated factories resolved from Alias and GenericClass");

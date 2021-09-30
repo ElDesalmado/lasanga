@@ -7,7 +7,7 @@
 
 // Layer.h
 
-#include <lasanga/alias_list.h>
+#include <lasanga/get_alias_list.h>
 #include <lasanga/tags.h>
 
 #include <iostream>
@@ -57,10 +57,9 @@ public:
      */
     template<typename BuilderT>
     constexpr explicit Layer(BuilderT &&builder)
-      : a_(builder(
-            eld::d_alias_tag<alias::A, ::Layer>())),   // :: is required due to ambiguous call error
-        b_(builder(eld::d_alias_tag<alias::B, ::Layer>())),
-        c_(builder(eld::d_alias_tag<alias::C, ::Layer>()))
+      : a_(builder(eld::d_alias_tag<alias::A, Layer>())),
+        b_(builder(eld::d_alias_tag<alias::B, Layer>())),
+        c_(builder(eld::d_alias_tag<alias::C, Layer>()))
     {
     }
 
@@ -90,19 +89,19 @@ struct dummy_t
 struct dummy_build_impl
 {
     template<typename... Modifiers, typename... ArgsT>
-    decltype(auto) construct(eld::d_alias_t<alias::A, Layer, Modifiers...>, ArgsT &&...)
+    decltype(auto) operator()(eld::d_alias_t<alias::A, Layer, Modifiers...>, ArgsT &&...)
     {
         return dummy_t<'A'>();
     }
 
     template<typename... Modifiers, typename... ArgsT>
-    decltype(auto) construct(eld::d_alias_t<alias::B, Layer, Modifiers...>, ArgsT &&...)
+    decltype(auto) operator()(eld::d_alias_t<alias::B, Layer, Modifiers...>, ArgsT &&...)
     {
         return dummy_t<'B'>();
     }
 
     template<typename... Modifiers, typename... ArgsT>
-    decltype(auto) construct(eld::d_alias_t<alias::C, Layer, Modifiers...>, ArgsT &&...)
+    decltype(auto) operator()(eld::d_alias_t<alias::C, Layer, Modifiers...>, ArgsT &&...)
     {
         return dummy_t<'C'>();
     }
@@ -130,13 +129,16 @@ void example_custom_builder()
     layer.print();
 }
 
+// default builder
 void example_builder()
 {
-    auto builder = eld::make_builder<eld::util::builder_impl>(
-        eld::d_named_factory<alias::A, Layer>([]() { return dummy_t<'A'>(); }),
-        eld::d_named_factory<alias::B, Layer>([]() { return dummy_t<'B'>(); }),
-        eld::d_named_factory<alias::C, Layer>([]() { return dummy_t<'C'>(); })
-    );
+    auto lambdaA = []() { return dummy_t<'A'>(); };
+    auto lambdaB = []() { return dummy_t<'B'>(); };
+    auto lambdaC = []() { return dummy_t<'C'>(); };
+
+    auto builder = eld::make_default_builder(eld::d_named_factory<alias::A, Layer>(lambdaA),
+                                             eld::d_named_factory<alias::B, Layer>(lambdaB),
+                                             eld::d_named_factory<alias::C, Layer>(lambdaC));
 
     auto layer = eld::make_lasanga<Layer>(builder);
     layer.print();

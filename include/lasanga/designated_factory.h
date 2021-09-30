@@ -12,16 +12,16 @@ namespace eld
     template<typename CallableT,
              typename ValueTypeT,
              typename AliasTagT = eld::tag::unnamed,
-             template<typename...> class TDependsOnT = eld::tag::unnamed_t>
+             typename DependsOnT = eld::tag::unnamed>
     class designated_factory
     {
     public:
         // TODO: clarify factory traits
         using value_type = ValueTypeT;
+        using type = value_type;
         using alias_tag = AliasTagT;
 
-        template<typename... T>
-        using depends_on_type = TDependsOnT<T...>;
+        using depends_on_type = DependsOnT;
 
         template<
             bool DefaultConstructible = std::is_destructible_v<CallableT>,
@@ -123,6 +123,8 @@ namespace eld
         return named_factory<NameTagT, std::decay_t<decltype(fPtr)>>(std::move(fPtr));
     }
 
+    // TODO: return DependsOnT as a template (non-template) argument
+
     template<typename NameTagT, template<typename...> class TDependsOnT, typename Callable>
     constexpr auto d_named_factory(Callable &&callable)
     {
@@ -133,7 +135,7 @@ namespace eld
         static_assert(!util::traits::is_tuple<constructed_type>(),
                       "Factories that construct tuples are not allowed. Use special overload and "
                       "explicitly specify constructed type");
-        return designated_factory<callable_type, constructed_type, NameTagT, TDependsOnT>(
+        return designated_factory<callable_type, constructed_type, NameTagT, wrapped_tt<TDependsOnT>>(
             std::forward<Callable>(callable));
     }
 

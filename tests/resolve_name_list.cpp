@@ -1,5 +1,4 @@
 ﻿
-#include "lasanga/utility/apply_predicates.h"
 #include "lasanga/utility/filter_type_list.h"
 
 #include <gtest/gtest.h>
@@ -51,11 +50,11 @@ namespace stub
 
 }   // namespace stub
 
-TEST(resolve_name_list, resolve_name)
-{
-
-    FAIL();
-}
+//TEST(resolve_name_list, resolve_name)
+//{
+//
+//    FAIL();
+//}
 
 int main(int argc, char **argv)
 {

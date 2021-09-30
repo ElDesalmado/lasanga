@@ -36,7 +36,7 @@ namespace eld
             decltype(auto) operator()(d_alias_t<NameTagT, TDependsOnT, Modifiers...> dNameTag,
                                       ArgsT &&...args)
             {
-                return impl_.construct(dNameTag, std::forward<ArgsT>(args)...);
+                return impl_(dNameTag, std::forward<ArgsT>(args)...);
             }
 
             template<template<typename...> class TAliasTagT,
