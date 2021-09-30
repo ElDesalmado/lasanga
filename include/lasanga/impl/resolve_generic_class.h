@@ -26,23 +26,44 @@ namespace eld::impl
         template<typename...>
         struct type_list;
 
-        struct alias_dummy;
-
         template<template<typename...> class TGenericClassT,
-                 typename AliasListT,
+                 template<template<typename...> class>
+                 class TGetAliasListTT,
                  template<typename, template<typename...> class>
-                 class TResolveAliasTypeTT>
-        struct resolve_alias_list;
+                 class TResolveAliasTypeTT,
+                 template<typename,
+                          template<template<typename...> class>
+                          class,
+                          template<typename, template<typename...> class>
+                          class>
+                 class TResolveGenericClassTT,
+                 typename AliasListT>
+        struct resolve_each_alias_type;
 
         template<template<typename...> class TGenericClassT,
+                 template<template<typename...> class>
+                 class TGetAliasListTT,
+                 template<typename, template<typename...> class>
+                 class TResolveAliasTypeTT,
+                 template<typename,
+                          template<template<typename...> class>
+                          class,
+                          template<typename, template<typename...> class>
+                          class>
+                 class TResolveGenericClassTT,
                  typename... AliasT,
                  template<typename...>
-                 class AliasListT,
-                 template<typename, template<typename...> class>
-                 class TResolveAliasTypeTT>
-        struct resolve_alias_list<TGenericClassT, AliasListT<AliasT...>, TResolveAliasTypeTT>
+                 class TAliasListT>
+        struct resolve_each_alias_type<TGenericClassT,
+                                       TGetAliasListTT,
+                                       TResolveAliasTypeTT,
+                                       TResolveGenericClassTT,
+                                       TAliasListT<AliasT...>>
         {
-            using type = type_list<typename TResolveAliasTypeTT<AliasT, TGenericClassT>::type...>;
+            using type = type_list<typename TResolveGenericClassTT<
+                typename TResolveAliasTypeTT<AliasT, TGenericClassT>::type,
+                TGetAliasListTT,
+                TResolveAliasTypeTT>::type...>;
         };
 
         template<typename ResolvedT,
@@ -68,8 +89,11 @@ namespace eld::impl
             using alias_list = typename TGetAliasListTT<TGenericT>::type;
 
             // resolve type by an alias and TGenericT for each alias from the alias_list
-            using type_list =
-                typename resolve_alias_list<TGenericT, alias_list, TResolveAliasTypeTT>::type;
+            using type_list = typename resolve_each_alias_type<TGenericT,
+                                                               TGetAliasListTT,
+                                                               TResolveAliasTypeTT,
+                                                               resolve_generic_class,
+                                                               alias_list>::type;
             using speciazed_generic = typename apply_template_arg_list<TGenericT, type_list>::type;
 
             using type = typename resolve_generic_class<speciazed_generic,

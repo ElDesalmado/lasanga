@@ -75,6 +75,7 @@ namespace eld::generic
                                  TGenericClassT,
                                  ModifiersT...>
     {
+        // TODO: handle case when resolved type is a wrapped generic class template
         // adapter to resolve from factories
         template<typename XAliasT, template<typename...> class XTGenericClassT>
         using resolve_alias_type =
