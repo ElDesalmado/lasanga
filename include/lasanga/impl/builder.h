@@ -40,12 +40,47 @@ namespace eld::impl
                                                factories_list,
                                                util::type_list<Modifiers...>>::type;
 
-            // TODO: handle "factory" with wrapped generic class template as a value_type for deep
-            //  composition
-
-            auto &factory = std::get<resolved_factory>(factories_);
-            return factory(std::forward<ArgsT>(args)...);
+            return construct<resolved_factory>(*this)(std::forward<ArgsT>(args)...);
         }
+
+    private:
+        // standard case when factory::type is resolved
+        template<typename FactoryT, typename = typename std::decay_t<FactoryT>::type>
+        struct construct
+        {
+            construct(builder &b)
+                : b(b)
+            {}
+
+            template<typename... ArgsT>
+            decltype(auto) operator()(ArgsT &&...args)
+            {
+                auto &factory = std::get<FactoryT>(b.factories_);
+                return factory(std::forward<ArgsT>(args)...);
+            }
+
+            builder &b;
+        };
+
+        template <typename FactoryT, template <typename...> class TGenericClassT,
+                 template <template <typename...> class> class TWrapperTT>
+                 struct construct<FactoryT, TWrapperTT<TGenericClassT>>
+        {
+            construct(builder &b)
+              : b(b)
+            {}
+
+            // TODO: implement
+            //  - in order to construct an object, generic class must be fully resolved
+//            template<typename... ArgsT>
+//            decltype(auto) operator()(ArgsT &&...args)
+//            {
+//                auto &factory = std::get<FactoryT>(b.factories_);
+//                return factory(std::forward<ArgsT>(args)...);
+//            }
+
+            builder &b;
+        };
 
     private:
         std::tuple<DesignatedFactoriesT...> factories_;
@@ -75,7 +110,6 @@ namespace eld::generic
                                  TGenericClassT,
                                  ModifiersT...>
     {
-        // TODO: handle case when resolved type is a wrapped generic class template
         // adapter to resolve from factories
         template<typename XAliasT, template<typename...> class XTGenericClassT>
         using resolve_alias_type =

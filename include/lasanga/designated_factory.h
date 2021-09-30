@@ -54,6 +54,7 @@ namespace eld
      *      - new class or add functionality?
      *      - value_type = wrapped_tt<TGenericClassT>
      *      - must specialized class be builder-aware?
+     *      - what does builder do, when asked to build a generic template?
      */
 
     template<typename Callable>
