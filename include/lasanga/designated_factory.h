@@ -49,6 +49,13 @@ namespace eld
         CallableT factory_;
     };
 
+    /*
+     * TODO: designated_factory for unspecialized generic class template
+     *      - new class or add functionality?
+     *      - value_type = wrapped_tt<TGenericClassT>
+     *      - must specialized class be builder-aware?
+     */
+
     template<typename Callable>
     constexpr auto wrap_factory(Callable &&callable)
     {
