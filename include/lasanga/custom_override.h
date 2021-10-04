@@ -1,6 +1,8 @@
 ﻿#pragma once
 
-#include "lasanga/traits.h"
+#include "lasanga/utility/traits.h"
+
+// TODO: remove this or fix?
 
 namespace eld
 {
@@ -60,14 +62,14 @@ namespace eld
             obj,
             std::forward_as_tuple(std::forward<ArgsT>(args)...),
             std::make_index_sequence<sizeof...(ArgsT) - 1>(),   // do not index callable
-            traits::is_complete<signature_type>());
+            util::traits::is_complete<signature_type>());
     }
 
     template<template<typename...> class SignatureTag, typename... U, typename T, typename... ArgsT>
     constexpr decltype(auto) invoke(T &&obj, ArgsT &&...args)
     {
         using signature_type = SignatureTag<std::decay_t<T>, U...>;
-        static_assert(traits::is_complete<signature_type>(), "Signature tag is not implemented!");
+        static_assert(util::traits::is_complete<signature_type>(), "Signature tag is not implemented!");
 
         return detail::invoke_by_signature<signature_type>(obj, std::forward<ArgsT>(args)...);
     }
@@ -78,7 +80,7 @@ namespace eld
         constexpr decltype(auto) get_tuple_element(T &&tuple, std::true_type /*is_tuple*/)
         {
             using found_type = eld::find_type<NameTag>;
-            static_assert(!std::is_same_v<found_type, not_found>,
+            static_assert(!std::is_same_v<found_type, tag::not_found>,
                           "NameTag does not have a type assigned to it");
 
             return std::get<found_type>(tuple);
@@ -105,10 +107,10 @@ namespace eld
         }
 
         template<typename NameTag, typename T>
-        constexpr decltype(auto) get_element_if_tuple(T &&tuple, std::true_type /*is_tuple<T>*/)
+        constexpr decltype(auto) get_element_if_tuple(T &&tuple, std::true_type /*is_tuple<TGenericClassT>*/)
         {
             using found_type = find_type<NameTag>;
-            static_assert(!std::is_same_v<found_type, not_found>,
+            static_assert(!std::is_same_v<found_type, tag::not_found>,
                           "NameTag does not have a type assigned to it");
 
             return std::get<found_type>(tuple);
@@ -131,7 +133,7 @@ namespace eld
         template<typename /*NameTag*/, typename T, typename Callable>
         constexpr decltype(auto) get_tuple_element_default_callable(T &&obj,
                                                                     Callable &&callable,
-                                                                    std::false_type /*is_tuple<T>*/)
+                                                                    std::false_type /*is_tuple<TGenericClassT>*/)
         {
             return std::forward<Callable>(callable)(obj);
         }
@@ -139,7 +141,7 @@ namespace eld
         template<typename NameTag, typename T, typename Callable>
         constexpr decltype(auto) get_tuple_element_default_callable(T &&obj,
                                                                     Callable &&,
-                                                                    std::true_type /*is_tuple<T>*/)
+                                                                    std::true_type /*is_tuple<TGenericClassT>*/)
         {
             return get_element_if_tuple<NameTag>(obj, std::true_type());
         }
@@ -166,7 +168,7 @@ namespace eld
 
     }   // namespace detail
 
-    // TODO: implement get to take into account if T is a tuple
+    // TODO: implement get to take into account if TGenericClassT is a tuple
     template<template<typename...> class NameTag, typename... U, typename T>
     constexpr decltype(auto) get(T &&obj)
     {

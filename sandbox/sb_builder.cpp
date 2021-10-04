@@ -14,7 +14,7 @@ struct NonTemplate
     void speak() { std::cout << "NonTemplate" << std::endl; }
 };
 
-// This part should be defined in user's generic/layer.h header
+// This part should be defined in user's generic/Layer.h header
 
 namespace alias
 {
@@ -28,38 +28,41 @@ namespace alias
 
 // TODO: function build(Builder, tag<NameOrType>) to deduce return type? (Object or Tuple)
 
-template<typename A, typename B, typename C>
-class Layer
+namespace space
 {
-public:
-    template<typename BuilderT>
-    Layer(BuilderT &&builder)
-      : a_(builder(eld::name_tag<alias::A>())),
-        b_(builder(eld::name_tag<alias::B>())),
-        c_(builder(eld::d_name_tag<alias::C, ::Layer>())),
-        nt_(builder(eld::build_tag<NonTemplate>()))
+    template<typename A, typename B, typename C>
+    class Layer
     {
-    }
+    public:
+        template<typename BuilderT>
+        Layer(BuilderT &&builder)
+          : a_(builder(eld::name_tag<alias::A>())),
+            b_(builder(eld::name_tag<alias::B>())),
+            c_(builder(eld::d_name_tag<alias::C, space::Layer>())),
+            nt_(builder(eld::build_tag<NonTemplate>()))
+        {
+        }
 
-    void speak_all()
-    {
-        a_.speak();
-        b_.speak();
-        c_.speak();
-        nt_.speak();
-    }
+        void speak_all()
+        {
+            a_.speak();
+            b_.speak();
+            c_.speak();
+            nt_.speak();
+        }
 
-private:
-    A a_;
-    B b_;
-    C c_;
-    NonTemplate nt_;
-};
+    private:
+        A a_;
+        B b_;
+        C c_;
+        NonTemplate nt_;
+    };
+}   // namespace space
 
 template<>
-struct eld::get_name_list<Layer>
+struct eld::get_alias_list<space::Layer>
 {
-    using type = type_list<alias::A, type_tt<alias::B>, alias::C>;
+    using type = util::type_list<alias::A, wrapped_tt<alias::B>, alias::C>;
 };
 
 // end of user-defined header
@@ -100,23 +103,25 @@ int main(int, char **)
 
     using output_sequence = typename eld::detail::map_tuple_index_sequence<
         tuple_input,
-        eld::type_list<eld::wrapped_predicate<std::is_integral>>>::type;
+        eld::util::type_list<eld::util::wrapped_predicate<std::is_integral>>>::type;
     static_assert(std::is_same_v<output_sequence, std::index_sequence<1, 3>>);
 
     using find_int = typename eld::detail::map_tuple_index_sequence<
         tuple_input,
-        eld::type_list<eld::wrapped_predicate<std::is_same, int>>>::type;
+        eld::util::type_list<eld::util::wrapped_predicate<std::is_same, int>>>::type;
     static_assert(std::is_same_v<find_int, std::index_sequence<1>>);
 
     tuple_input tupleInput{};
-    auto mappedTuple = eld::map_tuple<eld::wrapped_predicate<std::is_integral>>(tupleInput);
+    auto mappedTuple =
+        eld::util::map_tuple<eld::util::wrapped_predicate<std::is_integral>>(tupleInput);
     static_assert(std::is_same_v<decltype(mappedTuple), std::tuple<int &, size_t &>>);
 
-    auto mappedTuple2 = eld::map_tuple<eld::wrapped_predicate<std::is_integral>>(tuple_input());
+    auto mappedTuple2 =
+        eld::util::map_tuple<eld::util::wrapped_predicate<std::is_integral>>(tuple_input());
     static_assert(std::is_same_v<decltype(mappedTuple2), std::tuple<int &, size_t &>>);
 
     auto personUnnamedFactory = eld::wrap_factory(&create_person);
-    static_assert(eld::traits::is_unnamed<decltype(personUnnamedFactory)>::value);
+    static_assert(eld::traits::is_unnamed_factory<decltype(personUnnamedFactory)>::value);
 
     auto newBuilder = eld::make_builder(eld::wrap_factory(&create_person),
                                         eld::named_factory<alias::A>(&create_person),
@@ -148,12 +153,12 @@ int main(int, char **)
     eld::d_named_factory<alias::B, alias::B, create_cat>()().speak();
     eld::d_named_factory<alias::B, alias::B> (&create_person)().speak();
 
-    eld::d_named_factory<alias::C, Layer, create_cat>()().speak();
+    eld::d_named_factory<alias::C, space::Layer, create_cat>()().speak();
 
     auto builder =   // TODO: make it work
         eld::make_builder(eld::named_factory<alias::A>(&create_person),
                           eld::named_factory<alias::B>([]() { return Dog(); }),
-                          eld::d_named_factory<alias::C, Layer, create_cat>(),
+                          eld::d_named_factory<alias::C, space::Layer, create_cat>(),
                           eld::wrap_factory([]() { return NonTemplate(); }));
 
     builder(eld::build_tag<Person>()).speak();
@@ -163,9 +168,9 @@ int main(int, char **)
     builder(eld::name_tag<alias::A>()).speak();
     builder(eld::name_tag<alias::B>()).speak();
     builder(eld::name_tag<alias::C>()).speak();
-    builder(eld::d_name_tag<alias::C, Layer>()).speak();
+    builder(eld::d_name_tag<alias::C, space::Layer>()).speak();
 
-    auto deducedLayer = eld::make_lasanga<Layer>(builder);
+    auto deducedLayer = eld::make_lasanga<space::Layer>(builder);
     deducedLayer.speak_all();
 
     return 0;

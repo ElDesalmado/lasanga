@@ -1,6 +1,8 @@
 ﻿#pragma once
 
-#include "lasanga/traits.h"
+#include "lasanga/utility/traits.h"
+
+// TODO: remove?
 
 namespace eld
 {
@@ -21,7 +23,7 @@ namespace eld
          *          - default construct
          */
 
-        // TODO: add version that adds Builder to the front of the tuple of arguments if T is
+        // TODO: add version that adds Builder to the front of the tuple of arguments if TGenericClassT is
         //  constructable in that way
         template<typename T, typename Builder>
         constexpr decltype(auto) build(Builder &&builder, std::true_type /*is_buildable*/)
