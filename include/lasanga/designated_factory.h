@@ -143,8 +143,10 @@ namespace eld
         static_assert(!util::traits::is_tuple<constructed_type>(),
                       "Factories that construct tuples are not allowed. Use special overload and "
                       "explicitly specify constructed type");
-        return designated_factory<callable_type, constructed_type, NameTagT, wrapped_tt<TDependsOnT>>(
-            std::forward<Callable>(callable));
+        return designated_factory<callable_type,
+                                  constructed_type,
+                                  NameTagT,
+                                  wrapped_tt<TDependsOnT>>(std::forward<Callable>(callable));
     }
 
     template<typename NameTagT, template<typename...> class TDependsOnT, typename Callable>
@@ -170,19 +172,36 @@ namespace eld
             std::forward<Callable>(callable));
     }
 
-    template<template<typename...> class TNameTagT, template<typename...>
-                                                    class TDependsOnT, typename Callable>
+    template<template<typename...> class TNameTagT,
+             template<typename...>
+             class TDependsOnT,
+             typename Callable>
     constexpr auto d_named_factory()
     {
         return d_named_factory<TNameTagT, TDependsOnT>(Callable());
     }
 
-    template<template<typename...> class TNameTagT, template<typename...>
-                                                    class TDependsOnT, typename ConstructedT>
+    template<template<typename...> class TNameTagT,
+             template<typename...>
+             class TDependsOnT,
+             typename ConstructedT>
     constexpr auto d_named_factory(ConstructedT (*pFunction)())
     {
         return d_named_factory<TNameTagT, TDependsOnT, std::decay_t<decltype(pFunction)>>(
             std::move(pFunction));
+    }
+
+    template<typename AliasTagT,
+             template<typename...>
+             class TGenericClassT,
+             template<typename...>
+             class TDependsOnT>
+    constexpr auto named_generic_factory()
+    {
+        return designated_factory<void *,
+                                  wrapped_tt<TGenericClassT>,
+                                  AliasTagT,
+                                  wrapped_tt<TDependsOnT>>();
     }
 
 }   // namespace eld

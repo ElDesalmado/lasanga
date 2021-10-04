@@ -144,10 +144,48 @@ void example_builder()
     layer.print();
 }
 
+template <typename AT>
+struct Layer2
+{
+    template <typename BuilderT>
+    constexpr explicit Layer2(BuilderT &&builder)
+        : a(builder(eld::d_alias_tag<alias::A, Layer2>()))
+    {}
+
+    void print()
+    {
+        std::cout << "Layer2\n";
+        a.print();
+    }
+
+    AT a;
+};
+
+template <>
+struct eld::get_alias_list<Layer2>
+{
+    using type = alias_list<alias::A>;
+};
+
+void example_second_layer()
+{
+    auto lambdaA = []() { return dummy_t<'A'>(); };
+    auto lambdaC = []() { return dummy_t<'C'>(); };
+
+    auto builder = eld::make_default_builder(eld::d_named_factory<alias::A, Layer>(lambdaA),
+                                             eld::d_named_factory<alias::C, Layer>(lambdaC),
+                                             eld::named_generic_factory<alias::B, Layer2, Layer>(),
+                                             eld::d_named_factory<alias::A, Layer2>(lambdaA));
+
+    auto layer = eld::make_lasanga<Layer>(builder);
+    layer.print();
+}
+
 int main()
 {
     example_custom_builder();
     example_builder();
+    example_second_layer();
 
     return 0;
 }

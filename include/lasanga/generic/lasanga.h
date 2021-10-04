@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <type_traits>
+#include <utility>
 
 namespace eld::generic
 {
@@ -23,13 +24,14 @@ namespace eld::generic
              template<typename...>
              class TGenericClassT,
              typename... ModifiersT,
-             typename BuilderT>
-    constexpr auto make_lasanga(BuilderT &&builder)
+             typename BuilderT,
+             typename ... ArgsT>
+    constexpr auto make_lasanga(BuilderT &&builder, ArgsT &&... args)
     {
         using builder_type = std::decay_t<BuilderT>;
         using resolved_type =
             typename TResolveGenericClassTT<builder_type, TGenericClassT, ModifiersT...>::type;
 
-        return resolved_type(builder);
+        return resolved_type(builder, std::forward<ArgsT>(args)...);
     }
 }   // namespace eld::generic
