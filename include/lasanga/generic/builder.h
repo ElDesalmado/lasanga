@@ -51,7 +51,19 @@ namespace eld
                     std::forward<ArgsT>(args)...);
             }
 
-        private:
+            template <typename AliasTagT, typename ... ArgsT>
+            decltype(auto) operator()(eld::alias_t<AliasTagT> tag, ArgsT &&... args)
+            {
+                return impl_(tag, std::forward<ArgsT>(args)...);
+            }
+
+            template<template <typename...> class TAliasTagT, typename ... ArgsT>
+            decltype(auto) operator()(eld::alias_tt<TAliasTagT>, ArgsT &&...args)
+            {
+                return (*this)(eld::alias_t<wrapped_tt<TAliasTagT>>(), std::forward<ArgsT>(args)...);
+            }
+
+            private:
             implementation_type impl_;
         };
     }   // namespace generic

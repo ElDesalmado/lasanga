@@ -176,7 +176,6 @@ void example_second_layer()
                                              eld::d_named_factory<alias::C, Layer>(lambdaC),
                                              eld::named_generic_factory<alias::B, Layer, Layer2>(),
                                              eld::d_named_factory<alias::A, Layer2>(lambdaA));
-
     auto layer = eld::make_lasanga<Layer>(builder);
     layer.print();
 }
