@@ -8,7 +8,7 @@
 #include "lasanga/tags.h"
 
 // default implementations
-#include "lasanga/impl/builder.h"
+#include "lasanga/impl/builder.hpp"
 
 #include "lasanga/utility.h"
 
