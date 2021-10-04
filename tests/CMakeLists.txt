@@ -6,7 +6,6 @@ macro(eld_add_test src_name)
             COMMAND test.${src_name})
 endmacro()
 
-eld_add_test(apply_predicates)
 eld_add_test(filter_type_list)
 eld_add_test(resolve_name_list)
 eld_add_test(resolve_generic_class)
