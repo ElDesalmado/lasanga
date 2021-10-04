@@ -193,9 +193,9 @@ namespace eld
 
     template<typename AliasTagT,
              template<typename...>
-             class TGenericClassT,
+             class TDependsOnT,
              template<typename...>
-             class TDependsOnT>
+             class TGenericClassT>
     constexpr auto named_generic_factory()
     {
         return designated_factory<void *,
