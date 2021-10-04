@@ -49,6 +49,20 @@ namespace eld
         CallableT factory_;
     };
 
+    template<template <typename...> class TGenericClassT,
+             typename AliasTagT = eld::tag::unnamed,
+             typename DependsOnT = eld::tag::unnamed>
+    class generic_designated_factory
+    {
+    public:
+        using value_type = wrapped_tt<TGenericClassT>;
+        using type = value_type;
+        using alias_tag = AliasTagT;
+
+        using depends_on_type = DependsOnT;
+
+    };
+
     /*
      * TODO: designated_factory for unspecialized generic class template
      *      - new class or add functionality?
@@ -198,8 +212,7 @@ namespace eld
              class TGenericClassT>
     constexpr auto named_generic_factory()
     {
-        return designated_factory<void *,
-                                  wrapped_tt<TGenericClassT>,
+        return generic_designated_factory<TGenericClassT,
                                   AliasTagT,
                                   wrapped_tt<TDependsOnT>>();
     }
