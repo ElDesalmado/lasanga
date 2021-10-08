@@ -43,32 +43,21 @@ namespace eld::impl
             return construct<resolved_factory>(*this)(std::forward<ArgsT>(args)...);
         }
 
-        template<typename AliasTagT, typename... ArgsT>
-        decltype(auto) operator()(eld::alias_t<AliasTagT>, ArgsT &&...args)
+        template<typename AliasTagT, typename... ModifiersT, typename... ArgsT>
+        decltype(auto) operator()(alias_t<AliasTagT>, ArgsT &&...args)
         {
-            return factory_by_alias<AliasTagT>()(factories_)(std::forward<ArgsT>(args)...);
+            using resolved_factory =
+                typename util::resolve_factory<AliasTagT,
+                                               tag::unnamed,
+                                               factories_list,
+                                               util::type_list<ModifiersT...>>::type;
+
+            return construct<resolved_factory>(*this)(std::forward<ArgsT>(args)...);
         }
 
     private:
-
-        template <typename AliasTagT>
-        struct factory_by_alias;
-
-        // standard case when factory::type is resolved
         template<typename FactoryT, typename = typename std::decay_t<FactoryT>::type>
-        struct construct
-        {
-            construct(builder &b) : b(b) {}
-
-            template<typename... ArgsT>
-            decltype(auto) operator()(ArgsT &&...args)
-            {
-                auto &factory = std::get<FactoryT>(b.factories_);
-                return factory(std::forward<ArgsT>(args)...);
-            }
-
-            builder &b;
-        };
+        struct construct;
 
     private:
         std::tuple<DesignatedFactoriesT...> factories_;
