@@ -144,13 +144,13 @@ void example_builder()
     layer.print();
 }
 
-template <typename AT>
+template<typename AT>
 struct Layer2
 {
-    template <typename BuilderT>
-    constexpr explicit Layer2(BuilderT &&builder)
-        : a(builder(eld::d_alias_tag<alias::A, Layer2>()))
-    {}
+    template<typename BuilderT>
+    constexpr explicit Layer2(BuilderT &&builder) : a(builder(eld::d_alias_tag<alias::A, Layer2>()))
+    {
+    }
 
     void print()
     {
@@ -161,7 +161,7 @@ struct Layer2
     AT a;
 };
 
-template <>
+template<>
 struct eld::get_alias_list<Layer2>
 {
     using type = alias_list<alias::A>;
@@ -180,11 +180,41 @@ void example_second_layer()
     layer.print();
 }
 
+template<typename A>
+class independent_alias
+{
+public:
+    template<typename BuilderT>
+    constexpr explicit independent_alias(BuilderT &&builder)
+      : a_(builder(eld::alias_tag<alias::A>()))
+    {
+    }
+
+private:
+    A a_;
+};
+
+template <>
+struct eld::get_alias_list<independent_alias>
+{
+    using type = alias_list<alias::A>;
+};
+
+void example_independent_alias()
+{
+    auto builder =
+        eld::make_default_builder(eld::named_factory<alias::A>([]() { return dummy_t<'A'>(); }));
+
+    auto l = eld::make_lasanga<independent_alias>(builder);
+    (void)l;
+}
+
 int main()
 {
     example_custom_builder();
     example_builder();
     example_second_layer();
+    example_independent_alias();
 
     return 0;
 }

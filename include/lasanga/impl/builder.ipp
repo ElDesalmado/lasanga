@@ -47,6 +47,26 @@ namespace eld::generic
 
 namespace eld::impl
 {
+    // standard case when factory::type is resolved
+    template<typename... DesignatedFactoriesT>
+    template<typename FactoryT, typename>
+    struct builder<DesignatedFactoriesT...>::construct
+    {
+        constexpr explicit construct(builder &b)   //
+          : b(b)
+        {
+        }
+
+        template<typename... ArgsT>
+        decltype(auto) operator()(ArgsT &&...args)
+        {
+            auto &factory = std::get<FactoryT>(b.factories_);
+            return factory(std::forward<ArgsT>(args)...);
+        }
+
+        builder &b;
+    };
+
     // recursive specialization for multiple layers
     template<typename... DesignatedFactoriesT>
     template<typename FactoryT,
@@ -56,7 +76,10 @@ namespace eld::impl
              class TWrapperTT>
     struct builder<DesignatedFactoriesT...>::construct<FactoryT, TWrapperTT<TGenericClassT>>
     {
-        construct(builder &b) : b(b) {}
+        constexpr explicit construct(builder &b)   //
+          : b(b)
+        {
+        }
 
         template<typename... ArgsT>
         decltype(auto) operator()(ArgsT &&...args)
@@ -89,6 +112,7 @@ namespace eld::impl
         };
     }   // namespace detail
 
+    // TODO: move this logic to resolve_factory
     template<typename... DesignatedFactoriesT>
     template<typename AliasT>
     struct builder<DesignatedFactoriesT...>::factory_by_alias
