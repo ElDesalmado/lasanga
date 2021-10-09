@@ -30,7 +30,8 @@ namespace eld
             }
 
             template<typename NameTagT,
-                     template <typename...> class TDependsOnT,
+                     template<typename...>
+                     class TDependsOnT,
                      typename... Modifiers,
                      typename... ArgsT>
             decltype(auto) operator()(d_alias_t<NameTagT, TDependsOnT, Modifiers...> dNameTag,
@@ -44,26 +45,26 @@ namespace eld
                      class TDependsOnT,
                      typename... ModifiersT,
                      typename... ArgsT>
-            decltype(auto) operator()(eld::d_alias_tt<TAliasTagT, TDependsOnT, ModifiersT...>,
-                                      ArgsT &&...args)
+            decltype(auto) operator()(
+                eld::d_alias_tt<TAliasTagT, TDependsOnT, ModifiersT...> aliasTag,
+                ArgsT &&...args)
             {
-                return (*this)(d_alias_t<wrapped_tt<TAliasTagT>, TDependsOnT, ModifiersT...>(),
-                    std::forward<ArgsT>(args)...);
+                return impl_(aliasTag, std::forward<ArgsT>(args)...);
             }
 
-            template <typename AliasTagT, typename ... ArgsT>
-            decltype(auto) operator()(eld::alias_t<AliasTagT> tag, ArgsT &&... args)
+            template<typename AliasTagT, typename... ArgsT>
+            decltype(auto) operator()(eld::alias_t<AliasTagT> tag, ArgsT &&...args)
             {
                 return impl_(tag, std::forward<ArgsT>(args)...);
             }
 
-            template<template <typename...> class TAliasTagT, typename ... ArgsT>
-            decltype(auto) operator()(eld::alias_tt<TAliasTagT>, ArgsT &&...args)
+            template<template<typename...> class TAliasTagT, typename... ArgsT>
+            decltype(auto) operator()(eld::alias_tt<TAliasTagT> aliasTag, ArgsT &&...args)
             {
-                return (*this)(eld::alias_t<wrapped_tt<TAliasTagT>>(), std::forward<ArgsT>(args)...);
+                return impl_(aliasTag, std::forward<ArgsT>(args)...);
             }
 
-            private:
+        private:
             implementation_type impl_;
         };
     }   // namespace generic

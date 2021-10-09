@@ -43,6 +43,18 @@ namespace eld::impl
             return construct<resolved_factory>(*this)(std::forward<ArgsT>(args)...);
         }
 
+        template<template<typename...> class TAliasTagT,
+                 template<typename...>
+                 class TDependsOnT,
+                 typename... ModifiersT,
+                 typename... ArgsT>
+        decltype(auto) operator()(eld::d_alias_tt<TAliasTagT, TDependsOnT, ModifiersT...>,
+                                  ArgsT &&...args)
+        {
+            return (*this)(eld::d_alias_tag<wrapped_tt<TAliasTagT>, TDependsOnT, ModifiersT...>(),
+                           std::forward<ArgsT>(args)...);
+        }
+
         template<typename AliasTagT, typename... ModifiersT, typename... ArgsT>
         decltype(auto) operator()(alias_t<AliasTagT>, ArgsT &&...args)
         {
@@ -53,6 +65,12 @@ namespace eld::impl
                                                util::type_list<ModifiersT...>>::type;
 
             return construct<resolved_factory>(*this)(std::forward<ArgsT>(args)...);
+        }
+
+        template<template<typename...> class TAliasTagT, typename... ArgsT>
+        decltype(auto) operator()(eld::alias_tt<TAliasTagT>, ArgsT &&...args)
+        {
+            return (*this)(alias_t<wrapped_tt<TAliasTagT>>(), std::forward<ArgsT>(args)...);
         }
 
     private:
