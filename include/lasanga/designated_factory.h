@@ -217,4 +217,14 @@ namespace eld
                                   wrapped_tt<TDependsOnT>>();
     }
 
+    template<template <typename...> class TAliasTagT,
+             template<typename...>
+             class TDependsOnT,
+             template<typename...>
+             class TGenericClassT>
+    constexpr auto named_generic_factory()
+    {
+        return named_generic_factory<wrapped_tt<TAliasTagT>, TDependsOnT, TGenericClassT>();
+    }
+
 }   // namespace eld
